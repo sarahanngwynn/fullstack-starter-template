@@ -7,7 +7,7 @@ const t = initTRPC.context<Context>().create({
   transformer: superjson,
   errorFormatter({ shape, error, ctx }) {
     if (error.code === 'INTERNAL_SERVER_ERROR') {
-      ctx?.req.log.error(error);
+      (ctx?.req.log as any).error(error);
       return { ...shape, message: 'Internal server error' };
     }
     return shape;
