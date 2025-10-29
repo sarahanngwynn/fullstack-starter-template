@@ -45,7 +45,7 @@ function SignUpCardUI({ onSubmit }: SignUpCardProps) {
       <Stack spacing={8} mx={'auto'} maxW={'lg'} minW={'450px'} py={12} px={6}>
         <Stack align={'center'}>
           <Heading fontSize={'4xl'} textAlign={'center'}>
-            Sign up
+            Apply
           </Heading>
           <Text fontSize={'lg'} color={'gray.600'}>
             to enjoy all of our cool features
@@ -110,12 +110,12 @@ function SignUpCardUI({ onSubmit }: SignUpCardProps) {
                     bg: 'blue.500',
                   }}
                 >
-                  Sign up
+                  Apply
                 </Button>
               </Stack>
               <Stack pt={6}>
                 <Text align={'center'}>
-                  Already a user?{' '}
+                  Already have applied?{' '}
                   <Link as={RouterLink} to={'/login'} color={'blue.400'}>
                     Login
                   </Link>
