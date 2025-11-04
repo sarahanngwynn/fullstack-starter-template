@@ -23,6 +23,7 @@ import {
   FiSettings,
   FiMenu,
   FiBell,
+  FiEdit 
 } from 'react-icons/fi';
 import { IconType } from 'react-icons';
 import { ReactText } from 'react';
@@ -36,6 +37,7 @@ interface LinkItemProps {
 }
 const LinkItems: Array<LinkItemProps> = [
   { name: 'Home', icon: FiHome, path: '/' },
+  { name: 'Apply', icon: FiEdit, path: '/apply' },
   { name: 'Trending', icon: FiTrendingUp, path: '/trending' },
   { name: 'Explore', icon: FiCompass, path: '/explore' },
   { name: 'Favourites', icon: FiStar, path: '/favourites' },
