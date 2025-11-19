@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, ReactText } from 'react';
 import {
   IconButton,
   Box,
@@ -6,7 +6,6 @@ import {
   Flex,
   HStack,
   Icon,
-  useColorModeValue,
   Link,
   Drawer,
   DrawerContent,
@@ -15,18 +14,8 @@ import {
   BoxProps,
   FlexProps,
 } from '@chakra-ui/react';
-import {
-  FiHome,
-  FiTrendingUp,
-  FiCompass,
-  FiStar,
-  FiSettings,
-  FiMenu,
-  FiBell,
-  FiEdit 
-} from 'react-icons/fi';
+import { FiHome, FiSettings, FiMenu, FiBell, FiEdit } from 'react-icons/fi';
 import { IconType } from 'react-icons';
-import { ReactText } from 'react';
 import AuthHeader from '../Auth/AuthHeader/AuthHeader';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -35,12 +24,10 @@ interface LinkItemProps {
   icon: IconType;
   path: string;
 }
+
 const LinkItems: Array<LinkItemProps> = [
   { name: 'Home', icon: FiHome, path: '/' },
   { name: 'Apply', icon: FiEdit, path: '/apply' },
-  { name: 'Trending', icon: FiTrendingUp, path: '/trending' },
-  { name: 'Explore', icon: FiCompass, path: '/explore' },
-  { name: 'Favourites', icon: FiStar, path: '/favourites' },
   { name: 'Settings', icon: FiSettings, path: '/settings' },
 ];
 
@@ -50,12 +37,15 @@ export default function SidebarWithHeader({
   children: ReactNode;
 }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
+
   return (
-    <Box minH="100vh" bg={useColorModeValue('gray.100', 'gray.900')}>
+    // Hard-coded light background so it matches Dancing Moose and ignores dark mode
+    <Box minH="100vh" bg="#f8f6f1">
       <SidebarContent
-        onClose={() => onClose}
+        onClose={onClose}
         display={{ base: 'none', md: 'block' }}
       />
+
       <Drawer
         autoFocus={false}
         isOpen={isOpen}
@@ -69,9 +59,12 @@ export default function SidebarWithHeader({
           <SidebarContent onClose={onClose} />
         </DrawerContent>
       </Drawer>
-      {/* mobilenav */}
+
+      {/* top nav on mobile */}
       <MobileNav onOpen={onOpen} />
-      <Box ml={{ base: 0, md: 60 }} p="4">
+
+      {/* main content */}
+      <Box ml={{ base: 0, md: 60 }} p={{ base: 4, md: 8 }} bg="transparent">
         {children}
       </Box>
     </Box>
@@ -85,21 +78,27 @@ interface SidebarProps extends BoxProps {
 const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
   return (
     <Box
-      transition="3s ease"
-      bg={useColorModeValue('white', 'gray.900')}
+      transition="0.3s ease"
+      bg="white"
       borderRight="1px"
-      borderRightColor={useColorModeValue('gray.200', 'gray.700')}
+      borderRightColor="#e2ddd4"
       w={{ base: 'full', md: 60 }}
       pos="fixed"
       h="full"
       {...rest}
     >
-      <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
-        <Text fontSize="2xl" fontFamily="monospace" fontWeight="bold">
-          Logo
+      <Flex h="20" alignItems="center" mx="6" justifyContent="space-between">
+        <Text
+          fontSize="lg"
+          fontFamily="'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+          fontWeight="bold"
+          color="#2f7f7a"
+        >
+          Welcome!
         </Text>
         <CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} />
       </Flex>
+
       {LinkItems.map((link) => (
         <NavItem key={link.name} icon={link.icon} path={link.path}>
           {link.name}
@@ -114,6 +113,7 @@ interface NavItemProps extends FlexProps {
   children: ReactText;
   path: string;
 }
+
 const NavItem = ({ icon, children, path, ...rest }: NavItemProps) => {
   return (
     <Link
@@ -124,20 +124,22 @@ const NavItem = ({ icon, children, path, ...rest }: NavItemProps) => {
     >
       <Flex
         align="center"
-        p="4"
+        p="3"
         mx="4"
-        borderRadius="lg"
+        borderRadius="full"
         role="group"
         cursor="pointer"
+        fontSize="sm"
+        color="gray.700"
         _hover={{
-          bg: 'cyan.400',
+          bg: '#2f7f7a',
           color: 'white',
         }}
         {...rest}
       >
         {icon && (
           <Icon
-            mr="4"
+            mr="3"
             fontSize="16"
             _groupHover={{
               color: 'white',
@@ -154,16 +156,17 @@ const NavItem = ({ icon, children, path, ...rest }: NavItemProps) => {
 interface MobileProps extends FlexProps {
   onOpen: () => void;
 }
+
 const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
   return (
     <Flex
       ml={{ base: 0, md: 60 }}
-      px={{ base: 4, md: 4 }}
+      px={{ base: 4, md: 6 }}
       height="20"
       alignItems="center"
-      bg={useColorModeValue('white', 'gray.900')}
+      bg="white"
       borderBottomWidth="1px"
-      borderBottomColor={useColorModeValue('gray.200', 'gray.700')}
+      borderBottomColor="#e2ddd4"
       justifyContent={{ base: 'space-between', md: 'flex-end' }}
       {...rest}
     >
@@ -177,18 +180,19 @@ const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
 
       <Text
         display={{ base: 'flex', md: 'none' }}
-        fontSize="2xl"
-        fontFamily="monospace"
+        fontSize="lg"
+        fontFamily="'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
         fontWeight="bold"
+        color="#2f7f7a"
       >
-        Logo
+        Welcome
       </Text>
 
       <HStack spacing={{ base: '0', md: '6' }}>
         <IconButton
           size="lg"
           variant="ghost"
-          aria-label="open menu"
+          aria-label="notifications"
           icon={<FiBell />}
         />
         <AuthHeader />

@@ -1,34 +1,68 @@
-import { Box, Heading, Button } from '@chakra-ui/react';
 import React from 'react';
+import { Box, Heading, Text, Button, Stack } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
+
+const pageBg = '#f8f6f1'; // cream background
+const cardBg = '#ffffff';
+const cardBorder = '#e2ddd4';
 
 const Home = () => {
   return (
-    <Box>
-      <Heading>Apply now!</Heading>
-      <Button as={RouterLink} to="/apply" mt={4} colorScheme="teal">
-        Go to Application
-      </Button>
+    <Box
+      minH="100vh"
+      bg={pageBg}
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      px={4}
+    >
+      <Box
+        maxW="lg"
+        w="100%"
+        bg={cardBg}
+        borderWidth="1px"
+        borderColor={cardBorder}
+        borderRadius="2xl"
+        boxShadow="xl"
+        p={{ base: 6, md: 10 }}
+        textAlign="center"
+      >
 
-      <p>Go ahead!</p>
+        {/* MAIN HEADING (Bring back the title!) */}
+        <Heading
+          as="h1"
+          size="xl"
+          mb={4}
+          color="#2f7f7a"
+          letterSpacing="wide"
+        >
+          Ready to Apply?
+        </Heading>
 
-      <p>
-       Please Apply
-      </p>
+        <Text fontSize="md" color="gray.600" mb={6} px={4}>
+        The whole process only takes a few minutes. Pay the application fee at the end to submit your application.
+        </Text>
 
-      <p>
-        You'll love our School
-      </p>
+        {/* Centered button */}
+        <Stack spacing={4} justify="center" align="center">
+          <Button
+            as={RouterLink}
+            to="/apply"
+            size="lg"
+            bg="#2f7f7a"
+            color="white"
+            _hover={{ bg: '#256864' }}
+            borderRadius="full"
+            px={8}
+          >
+            Apply Here
+          </Button>
+        </Stack>
 
-      <p>
-        Just click the button
-      </p>
-
-      <p>
-        You'll get in, I promise!
-      </p>
+      </Box>
     </Box>
   );
 };
 
 export default Home;
+
