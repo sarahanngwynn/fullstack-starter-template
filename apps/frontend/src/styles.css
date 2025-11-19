@@ -1,9 +1,20 @@
 /* You can add global styles to this file, and also import other style files */
 :root {
-  --bg-color-primary: #171922;
-  --bg-color-secondary: #1e2028;
+  /* Dancing Moose–style light palette */
+  --bg-color-primary: #f8f6f1;   /* warm off-white page background */
+  --bg-color-secondary: #efe5d6; /* soft “wood”/cream strip */
+  --card-bg: #ffffff;            /* cards */
+  --accent-teal: #2f7f7a;        /* main teal */
+  --accent-teal-soft: #8ec7c0;   /* lighter teal if you need it */
 
-  color-scheme: light dark;
-
+  /* Force light theme; stop hinting dark mode */
+  color-scheme: light;
 }
+
+/* Make sure the page actually uses the light background */
+body {
+  margin: 0;
+  background-color: var(--bg-color-primary);
+}
+
 

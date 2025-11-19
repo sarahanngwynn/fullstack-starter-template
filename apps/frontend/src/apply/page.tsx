@@ -4,12 +4,14 @@ import * as React from "react";
 import { useForm, FormProvider } from "react-hook-form";
 
 // ---- MUI core ----
-import { StyledEngineProvider, ThemeProvider, createTheme } from "@mui/material/styles";
+import {
+  StyledEngineProvider,
+  ThemeProvider,
+  createTheme,
+} from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
-import Toolbar from "@mui/material/Toolbar";
 import Paper from "@mui/material/Paper";
 import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
@@ -39,7 +41,7 @@ type FormValues = {
 
   childFullName?: string;
   childSex?: string;
-  childBirthDate?: string; // string or Date; ChildsDetails uses dayjs
+  childBirthDate?: string;
   anyConcerns?: string | boolean;
 
   desiredLocation?: string | null;
@@ -53,10 +55,26 @@ type FormValues = {
 
 const steps = ["Parent Details", "Child Details", "Location", "Program", "Payment"];
 
-// Provide a stable MUI theme (prevents undefined theme errors)
-const muiTheme = createTheme();
+// Dancing-Moose-ish colors + typography
+const muiTheme = createTheme({
+  palette: {
+    primary: {
+      main: "#2f7f7a", // teal
+    },
+    background: {
+      default: "#f8f6f1", // warm off-white
+    },
+  },
+  typography: {
+    fontFamily: '"Nunito", "Helvetica", "Arial", sans-serif',
+  },
+});
 
-function getStepContent(step: number, control: any, errors: any): React.ReactNode {
+function getStepContent(
+  step: number,
+  control: any,
+  errors: any
+): React.ReactNode {
   switch (step) {
     case 0:
       return <ParentDetails control={control} errors={errors} />;
@@ -83,15 +101,12 @@ export default function ApplyPage() {
       email: "",
       phoneNumber: "",
       emailList: false,
-
       childFullName: "",
       childSex: "",
       childBirthDate: "",
       anyConcerns: "",
-
       desiredLocation: null,
       desiredProgram: null,
-
       nameOnCard: "",
       cardNumber: "",
       expirationDate: "",
@@ -107,8 +122,7 @@ export default function ApplyPage() {
     setActiveStep(steps.length); // show success screen
   };
 
-  const handleNext = async () => {
-    // If you want per-step validation, call methods.trigger([...fields]) here.
+  const handleNext = () => {
     setActiveStep((s) => s + 1);
   };
 
@@ -119,75 +133,151 @@ export default function ApplyPage() {
       <ThemeProvider theme={muiTheme}>
         <CssBaseline />
         <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <AppBar position="absolute" color="default" elevation={0}>
-            <Toolbar>
-              <Typography variant="h6" color="inherit" noWrap>
-                Happy Moose — Apply
-              </Typography>
-            </Toolbar>
-          </AppBar>
+          <Box
+            sx={{
+              minHeight: "100vh",
+              bgcolor: "background.default",
+              py: { xs: 8, md: 10 },
+            }}
+          >
+            <Container component="main" maxWidth="md">
+              {/* HERO BAND – like the BLOG header */}
+              <Box
+                sx={{
+                  bgcolor: "#efe5d6",
+                  borderRadius: 3,
+                  border: "1px solid #f5edde",
+                  py: { xs: 6, md: 8 },
+                  px: { xs: 2, md: 6 },
+                  textAlign: "center",
+                  mb: 4,
+                }}
+              >
+                <Typography
+                  component="h1"
+                  variant="h4"
+                  sx={{
+                    mb: 2,
+                    letterSpacing: "0.08em",
+                    color: "#2f7f7a",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Enrollment Application
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    maxWidth: 700,
+                    mx: "auto",
+                    color: "text.secondary",
+                  }}
+                >
+                  It takes a village, and we’d love to be part of yours. This
+                  application is the first step in joining the our
+                  community.
+                </Typography>
+              </Box>
 
-          <Container component="main" maxWidth="md" sx={{ mb: 4 }}>
-            <Paper variant="outlined" sx={{ my: 12, p: { xs: 2, md: 4 } }}>
-              <Typography component="h1" variant="h4" align="center" sx={{ mb: 2 }}>
-                Apply for Dancing Moose
-              </Typography>
+              {/* FORM CARD */}
+              <Paper
+                variant="outlined"
+                sx={{
+                  my: { xs: 4, md: 6 },
+                  p: { xs: 2.5, md: 4 },
+                  borderRadius: 3,
+                  borderColor: "#e2ddd4",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.04)",
+                  backgroundColor: "#ffffff",
+                }}
+              >
+                <Stepper activeStep={activeStep} sx={{ pt: 1, pb: 4 }}>
+                  {steps.map((label) => (
+                    <Step key={label}>
+                      <StepLabel>{label}</StepLabel>
+                    </Step>
+                  ))}
+                </Stepper>
 
-              <Stepper activeStep={activeStep} sx={{ pt: 3, pb: 5 }}>
-                {steps.map((label) => (
-                  <Step key={label}>
-                    <StepLabel>{label}</StepLabel>
-                  </Step>
-                ))}
-              </Stepper>
-
-              <FormProvider {...methods}>
-                {activeStep === steps.length ? (
-                  <>
-                    <Typography variant="h5" gutterBottom>
-                      Thank you for applying! 🎉
-                    </Typography>
-                    <Typography variant="body1">
-                      We’ve received your application. We’ll be in touch shortly.
-                    </Typography>
-                    <Box sx={{ mt: 3 }}>
-                      <Link href="/">Return home</Link>
-                    </Box>
-                  </>
-                ) : (
-                  <form onSubmit={handleSubmit(onSubmit)}>
-                    {getStepContent(activeStep, methods.control, methods.formState.errors)}
-
-                    <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                      {activeStep !== 0 && (
-                        <Button onClick={handleBack} sx={{ mt: 3, ml: 1 }}>
-                          Back
-                        </Button>
+                <FormProvider {...methods}>
+                  {activeStep === steps.length ? (
+                    <>
+                      <Typography variant="h5" gutterBottom sx={{ mb: 1 }}>
+                        Thank you for applying! 🎉
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 3 }}>
+                        We’ve received your application and will be in touch
+                        shortly with next steps.
+                      </Typography>
+                      <Box sx={{ mt: 2 }}>
+                        <Link href="/" underline="hover">
+                          Return home
+                        </Link>
+                      </Box>
+                    </>
+                  ) : (
+                    <form onSubmit={handleSubmit(onSubmit)}>
+                      {getStepContent(
+                        activeStep,
+                        methods.control,
+                        methods.formState.errors
                       )}
 
-                      {activeStep === steps.length - 1 ? (
-                        <Button type="submit" variant="contained" sx={{ mt: 3, ml: 1 }}>
-                          Apply Now
-                        </Button>
-                      ) : (
-                        <Button variant="contained" sx={{ mt: 3, ml: 1 }} onClick={handleNext}>
-                          Next
-                        </Button>
-                      )}
-                    </Box>
-                  </form>
-                )}
-              </FormProvider>
-            </Paper>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          mt: 4,
+                        }}
+                      >
+                        {activeStep !== 0 && (
+                          <Button
+                            onClick={handleBack}
+                            sx={{ mr: 1.5 }}
+                            variant="text"
+                          >
+                            Back
+                          </Button>
+                        )}
 
-            <Box sx={{ textAlign: "center", color: "text.secondary" }}>
-              <Typography variant="body2">
-                Problems? <Link href="mailto:support@example.com">Contact us</Link>
-              </Typography>
-            </Box>
-          </Container>
+                        {activeStep === steps.length - 1 ? (
+                          <Button
+                            type="submit"
+                            variant="contained"
+                            color="primary"
+                            sx={{ borderRadius: 999, px: 3 }}
+                          >
+                            Apply Now
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            sx={{ borderRadius: 999, px: 3 }}
+                            onClick={handleNext}
+                          >
+                            Next
+                          </Button>
+                        )}
+                      </Box>
+                    </form>
+                  )}
+                </FormProvider>
+              </Paper>
+
+              <Box sx={{ textAlign: "center", color: "text.secondary", mb: 2 }}>
+                <Typography variant="body2">
+                  Problems?{" "}
+                  <Link href="mailto:support@example.com" underline="hover">
+                    Contact us
+                  </Link>
+                </Typography>
+              </Box>
+            </Container>
+          </Box>
         </LocalizationProvider>
       </ThemeProvider>
     </StyledEngineProvider>
   );
 }
+
