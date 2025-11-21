@@ -9,6 +9,7 @@ describe('Navigation to Apply Page', () => {
         .click();
   
       cy.url().should('include', '/apply');
-      cy.contains('ENROLLMENT APPLICATION').should('be.visible');
+      cy.contains(/Enrollment Application/i).should('be.visible');
+
     });
   });
