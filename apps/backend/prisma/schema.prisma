@@ -18,3 +18,37 @@ model User {
   role      String   @db.VarChar(255)
   password  String   @db.VarChar(255)
 }
+model Application {
+  id                 String   @id @default(cuid())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Basic app info
+  siteKey            String   // e.g. "DM-RIVERPARK"
+  status             AppStatus          @default(DRAFT)
+  procareSyncStatus  ProcareSyncStatus  @default(NOT_SENT)
+
+ 
+  // store all form data as JSON. You can normalize later.
+  childData     Json
+  guardiansData Json
+  otherData     Json?
+
+  // Payment
+  hasPaid       Boolean  @default(false)
+  stripePaymentId String? 
+}
+
+enum AppStatus {
+  DRAFT
+  SUBMITTED
+  CANCELLED
+}
+
+enum ProcareSyncStatus {
+  NOT_SENT
+  PENDING
+  SENT
+  FAILED
+}
+
