@@ -2,8 +2,9 @@
 
 import * as React from "react";
 import { useForm, FormProvider } from "react-hook-form";
+import { trpc } from "../utils/trpc";
 
-// ---- MUI core ----
+
 import {
   StyledEngineProvider,
   ThemeProvider,
@@ -20,32 +21,29 @@ import Button from "@mui/material/Button";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 
-// ---- MUI date pickers ----
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
-// ---- Step components ----
 import ParentDetails from "./ParentDetails";
 import ChildsDetails from "./ChildsDetails";
 import Location from "./Location";
 import Program from "./Program";
 import Payment from "./Payment";
 
-// ---------- Types ----------
 type FormValues = {
-  parentFirstName?: string;
-  parentLastName?: string;
-  email?: string;
-  phoneNumber?: string;
-  emailList?: boolean;
+  parentFirstName: string;
+  parentLastName: string;
+  email: string;
+  phoneNumber: string;
+  emailList: boolean;
 
-  childFullName?: string;
-  childSex?: string;
-  childBirthDate?: string;
+  childFullName: string;
+  childSex: string;
+  childBirthDate: string;
   anyConcerns?: string | boolean;
 
-  desiredLocation?: string | null;
-  desiredProgram?: string | null;
+  desiredLocation: string | null;
+  desiredProgram: string | null;
 
   nameOnCard?: string;
   cardNumber?: string;
@@ -55,14 +53,13 @@ type FormValues = {
 
 const steps = ["Parent Details", "Child Details", "Location", "Program", "Payment"];
 
-// Dancing-Moose-ish colors + typography
 const muiTheme = createTheme({
   palette: {
     primary: {
-      main: "#2f7f7a", // teal
+      main: "#2f7f7a", 
     },
     background: {
-      default: "#f8f6f1", // warm off-white
+      default: "#f8f6f1", 
     },
   },
   typography: {
@@ -94,6 +91,9 @@ function getStepContent(
 export default function ApplyPage() {
   const [activeStep, setActiveStep] = React.useState(0);
 
+  // tRPC mutation to save the application to the backend
+  const submitApplication = trpc.applications.submit.useMutation();
+
   const methods = useForm<FormValues>({
     defaultValues: {
       parentFirstName: "",
@@ -119,7 +119,24 @@ export default function ApplyPage() {
 
   const onSubmit = (data: FormValues) => {
     console.log("Application submitted:", data);
-    setActiveStep(steps.length); // show success screen
+
+    // Call backend via tRPC
+    submitApplication.mutate(
+      {
+        ...(data as any),
+      },
+      {
+        onSuccess: (result: { id: string }) => {
+          console.log("Saved to backend with id:", result.id);
+          // Only move to success screen when save worked
+          setActiveStep(steps.length);
+        },
+        onError: (error: unknown) => {
+          console.error("Failed to save application:", error);
+          // later: show a toast / error UI here
+        },
+      }
+    );
   };
 
   const handleNext = () => {
@@ -174,8 +191,7 @@ export default function ApplyPage() {
                   }}
                 >
                   It takes a village, and we’d love to be part of yours. This
-                  application is the first step in joining the our
-                  community.
+                  application is the first step in joining our community.
                 </Typography>
               </Box>
 
@@ -246,8 +262,11 @@ export default function ApplyPage() {
                             variant="contained"
                             color="primary"
                             sx={{ borderRadius: 999, px: 3 }}
+                            disabled={submitApplication.isLoading}
                           >
-                            Apply Now
+                            {submitApplication.isLoading
+                              ? "Submitting..."
+                              : "Apply Now"}
                           </Button>
                         ) : (
                           <Button
