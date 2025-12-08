@@ -11,6 +11,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import Home from '../pages/Home';
 import { Box } from '@chakra-ui/react';
 import ApplyPage from '../apply/page';
+import RegistrationPage from "../register/page";
+
 
 export function App() {
   const { queryClient, trpcClient } = useQueryTrpcClient();
@@ -32,6 +34,7 @@ export function App() {
             <Route path="/login" element={<SignInCard />} />
             <Route path="*" element={<Box>Not Found</Box>} />
             <Route path="/apply" element={<ApplyPage />} />
+            <Route path="/register" element={<RegistrationPage />} /> 
           </Routes>
         </SidebarWithHeader>
       </QueryClientProvider>
