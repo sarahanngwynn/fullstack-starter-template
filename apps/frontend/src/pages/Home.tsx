@@ -14,11 +14,10 @@ const Home = () => {
       display="flex"
       alignItems="center"
       justifyContent="center"
-      px={4}
     >
       <Box
-        maxW="lg"
-        w="100%"
+        maxW="3xl"
+        w="full"
         bg={cardBg}
         borderWidth="1px"
         borderColor={cardBorder}
@@ -27,24 +26,29 @@ const Home = () => {
         p={{ base: 6, md: 10 }}
         textAlign="center"
       >
-
-        {/* MAIN HEADING (Bring back the title!) */}
+        {/* MAIN HEADING */}
         <Heading
           as="h1"
           size="xl"
           mb={4}
-          color="#2f7f7a"
-          letterSpacing="wide"
+          color="gray.800"    
+          fontWeight="bold"
         >
-          Ready to Apply?
+          Welcome to Dancing Moose
         </Heading>
 
-        <Text fontSize="md" color="gray.600" mb={6} px={4}>
-        The whole process only takes a few minutes. Pay the application fee at the end to submit your application.
+        <Text fontSize="lg" color="gray.600" mb={8}>
+          Curious families can start with an application, and currently-enrolled
+          families can complete registration for upcoming sessions.
         </Text>
 
-        {/* Centered button */}
-        <Stack spacing={4} justify="center" align="center">
+        {/* BUTTONS */}
+        <Stack
+          direction={{ base: 'column', sm: 'row' }}
+          spacing={4}
+          justify="center"
+        >
+          {/* Existing application button */}
           <Button
             as={RouterLink}
             to="/apply"
@@ -57,8 +61,22 @@ const Home = () => {
           >
             Apply Here
           </Button>
-        </Stack>
 
+          {/* New registration button */}
+          <Button
+            as={RouterLink}
+            to="/register"
+            size="lg"
+            variant="outline"
+            borderColor="#2f7f7a"
+            color="#2f7f7a"
+            _hover={{ bg: '#e0f0ef' }}
+            borderRadius="full"
+            px={8}
+          >
+            Register
+          </Button>
+        </Stack>
       </Box>
     </Box>
   );
