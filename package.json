@@ -118,7 +118,7 @@
     "@trpc/react-query": "^10.43.0",
     "@trpc/server": "^10.43.0",
     "bcryptjs": "^2.4.3",
-    "dayjs": "^1.11.18",
+    "dayjs": "^1.11.19",
     "env-var": "^7.4.1",
     "fastify": "^4.24.3",
     "framer-motion": "^10.16.4",

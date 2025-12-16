@@ -5,16 +5,16 @@ import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
-
-type Registration = {
-  dropOffSchedule: string;
-  pickUpSchedule: string;
-  [key: string]: any;
-};
+import type { Registration } from "./types";
 
 interface ScheduleProps {
   registration: Registration;
-  setRegistration: (value: Registration) => void;
+  setRegistration: React.Dispatch<React.SetStateAction<Registration>>;
+}
+
+interface ScheduleProps {
+  registration: Registration;
+  setRegistration: React.Dispatch<React.SetStateAction<Registration>>;
 }
 
 const DROP_OFF_OPTIONS = [
@@ -31,26 +31,23 @@ const PICK_UP_OPTIONS = [
   "5:30 pm",
 ];
 
-export default function Schedule({
-  registration,
-  setRegistration,
-}: ScheduleProps) {
+export default function Schedule({ registration, setRegistration }: ScheduleProps) {
   const handleDropOffSelect =
     (value: string) =>
-    (_event: React.SyntheticEvent<Element, Event>, checked: boolean) => {
-      setRegistration({
-        ...registration,
+    (_event: React.SyntheticEvent, checked: boolean) => {
+      setRegistration((prev) => ({
+        ...prev,
         dropOffSchedule: checked ? value : "",
-      });
+      }));
     };
 
   const handlePickUpSelect =
     (value: string) =>
-    (_event: React.SyntheticEvent<Element, Event>, checked: boolean) => {
-      setRegistration({
-        ...registration,
+    (_event: React.SyntheticEvent, checked: boolean) => {
+      setRegistration((prev) => ({
+        ...prev,
         pickUpSchedule: checked ? value : "",
-      });
+      }));
     };
 
   return (
@@ -68,7 +65,6 @@ export default function Schedule({
               label={option}
               checked={registration.dropOffSchedule === option}
               onChange={handleDropOffSelect(option)}
-              // keep original data-cy on the "normal" option
               data-cy={index === 0 ? "dropOff" : undefined}
             />
           </Grid>
@@ -88,7 +84,6 @@ export default function Schedule({
               label={option}
               checked={registration.pickUpSchedule === option}
               onChange={handlePickUpSelect(option)}
-              // keep original data-cy on the "normal" option
               data-cy={index === 0 ? "pickUp" : undefined}
             />
           </Grid>
@@ -97,3 +92,4 @@ export default function Schedule({
     </React.Fragment>
   );
 }
+
