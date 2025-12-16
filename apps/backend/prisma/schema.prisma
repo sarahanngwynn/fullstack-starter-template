@@ -1,6 +1,45 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+model ParentAccount {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  parentName   String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  children     ChildProfile[]
+  drafts       RegistrationDraft[]
+}
+
+model ChildProfile {
+  id        String   @id @default(cuid())
+  parentId  String
+  parent    ParentAccount @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  name      String
+  age       Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RegistrationDraft {
+  id        String   @id @default(cuid())
+  parentId  String
+  parent    ParentAccount @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  // Keep it flexible — store the registration payload as JSON
+  data      Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([parentId])
+}
+
+
 generator client {
   provider = "prisma-client-js"
 }

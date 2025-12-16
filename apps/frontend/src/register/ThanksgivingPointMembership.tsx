@@ -5,11 +5,8 @@ import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
+import type { Registration } from "./types";
 
-type Registration = {
-  tgMembership: string;
-  [key: string]: any;
-};
 
 interface TGMembershipProps {
   registration: Registration;
