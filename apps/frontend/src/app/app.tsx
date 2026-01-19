@@ -12,10 +12,12 @@ import Home from '../pages/Home';
 import { Box } from '@chakra-ui/react';
 import ApplyPage from '../apply/page';
 import RegistrationPage from "../register/page";
-
+import ParentDashboard from "../pages/parent";
+import ParentAuthPage from "../pages/parent/auth";
 
 export function App() {
   const { queryClient, trpcClient } = useQueryTrpcClient();
+
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <ToastContainer
@@ -25,6 +27,7 @@ export function App() {
         hideProgressBar
         closeOnClick
       />
+
       <QueryClientProvider client={queryClient}>
         <AuthVerify />
         <SidebarWithHeader>
@@ -32,9 +35,16 @@ export function App() {
             <Route path="/" element={<Home />} />
             <Route path="/sign-up" element={<SignUpCard />} />
             <Route path="/login" element={<SignInCard />} />
-            <Route path="*" element={<Box>Not Found</Box>} />
+
             <Route path="/apply" element={<ApplyPage />} />
-            <Route path="/register" element={<RegistrationPage />} /> 
+            <Route path="/register" element={<RegistrationPage />} />
+
+            {/* ✅ parent portal routes */}
+            <Route path="/parent" element={<ParentDashboard />} />
+            <Route path="/parent/auth" element={<ParentAuthPage />} />
+
+            {/* ✅ keep Not Found LAST */}
+            <Route path="*" element={<Box>Not Found</Box>} />
           </Routes>
         </SidebarWithHeader>
       </QueryClientProvider>
@@ -43,3 +53,4 @@ export function App() {
 }
 
 export default App;
+
