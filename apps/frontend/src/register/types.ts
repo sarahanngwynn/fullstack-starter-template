@@ -25,7 +25,7 @@ export type Registration = {
     listSupport?: string;
     emailList?: string[];
   
-    nameOnCard?: string;
+    cardName?: string;
     cardNumber?: string;
     expirationDate?: string;
     cvvNumber?: string;
