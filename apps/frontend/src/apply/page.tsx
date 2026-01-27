@@ -4,7 +4,6 @@ import * as React from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { trpc } from "../utils/trpc";
 
-
 import {
   StyledEngineProvider,
   ThemeProvider,
@@ -30,6 +29,8 @@ import Location from "./Location";
 import Program from "./Program";
 import Payment from "./Payment";
 
+type PaymentMethod = "card" | "ach" | "check" | "other";
+
 type FormValues = {
   parentFirstName: string;
   parentLastName: string;
@@ -40,12 +41,19 @@ type FormValues = {
   childFullName: string;
   childSex: string;
   childBirthDate: string;
-  anyConcerns?: string | boolean;
+  anyConcerns?: string;
 
-  desiredLocation: string | null;
-  desiredProgram: string | null;
+  // IMPORTANT: make these strings (not null) to match backend z.string()
+  desiredLocation: string;
+  desiredProgram: string;
 
-  nameOnCard?: string;
+  // Backend-required payment fields
+  paymentMethod: PaymentMethod;
+  billingZip: string;
+  authorizePayment: boolean;
+  cardName: string;
+
+  // UI-only fields (DO NOT send/store)
   cardNumber?: string;
   expirationDate?: string;
   cvvNumber?: string;
@@ -55,23 +63,15 @@ const steps = ["Parent Details", "Child Details", "Location", "Program", "Paymen
 
 const muiTheme = createTheme({
   palette: {
-    primary: {
-      main: "#2f7f7a", 
-    },
-    background: {
-      default: "#f8f6f1", 
-    },
+    primary: { main: "#2f7f7a" },
+    background: { default: "#f8f6f1" },
   },
   typography: {
     fontFamily: '"Nunito", "Helvetica", "Arial", sans-serif',
   },
 });
 
-function getStepContent(
-  step: number,
-  control: any,
-  errors: any
-): React.ReactNode {
+function getStepContent(step: number, control: any, errors: any) {
   switch (step) {
     case 0:
       return <ParentDetails control={control} errors={errors} />;
@@ -91,7 +91,6 @@ function getStepContent(
 export default function ApplyPage() {
   const [activeStep, setActiveStep] = React.useState(0);
 
-  // tRPC mutation to save the application to the backend
   const submitApplication = trpc.applications.submit.useMutation();
 
   const methods = useForm<FormValues>({
@@ -101,13 +100,21 @@ export default function ApplyPage() {
       email: "",
       phoneNumber: "",
       emailList: false,
+
       childFullName: "",
       childSex: "",
       childBirthDate: "",
       anyConcerns: "",
-      desiredLocation: null,
-      desiredProgram: null,
-      nameOnCard: "",
+
+      desiredLocation: "",
+      desiredProgram: "",
+
+      paymentMethod: "card",
+      billingZip: "",
+      authorizePayment: false,
+      cardName: "",
+
+      // UI-only
       cardNumber: "",
       expirationDate: "",
       cvvNumber: "",
@@ -118,31 +125,44 @@ export default function ApplyPage() {
   const { handleSubmit } = methods;
 
   const onSubmit = (data: FormValues) => {
-    console.log("Application submitted:", data);
+    // Only send safe fields that backend expects
+    const payload = {
+      parentFirstName: data.parentFirstName,
+      parentLastName: data.parentLastName,
+      email: data.email,
+      phoneNumber: data.phoneNumber,
+      emailList: data.emailList,
 
-    // Call backend via tRPC
-    submitApplication.mutate(
-      {
-        ...(data as any),
+      childFullName: data.childFullName,
+      childSex: data.childSex,
+      childBirthDate: data.childBirthDate,
+      anyConcerns: data.anyConcerns,
+
+      desiredLocation: data.desiredLocation,
+      desiredProgram: data.desiredProgram,
+
+      paymentMethod: data.paymentMethod,
+      billingZip: data.billingZip,
+      authorizePayment: data.authorizePayment,
+      cardName: data.cardName,
+
+      // intentionally NOT sending:
+      // cardNumber, expirationDate, cvvNumber
+    };
+
+    submitApplication.mutate(payload, {
+      onSuccess: (result: { id: string }) => {
+        console.log("Saved to backend with id:", result.id);
+        setActiveStep(steps.length);
       },
-      {
-        onSuccess: (result: { id: string }) => {
-          console.log("Saved to backend with id:", result.id);
-          // Only move to success screen when save worked
-          setActiveStep(steps.length);
-        },
-        onError: (error: unknown) => {
-          console.error("Failed to save application:", error);
-          // later: show a toast / error UI here
-        },
-      }
-    );
+      onError: (error) => {
+        console.error("Failed to save application:", error);
+        // optional: show toast/snackbar
+      },
+    });
   };
 
-  const handleNext = () => {
-    setActiveStep((s) => s + 1);
-  };
-
+  const handleNext = () => setActiveStep((s) => s + 1);
   const handleBack = () => setActiveStep((s) => s - 1);
 
   return (
@@ -158,7 +178,7 @@ export default function ApplyPage() {
             }}
           >
             <Container component="main" maxWidth="md">
-              {/* HERO BAND – like the BLOG header */}
+              {/* HERO BAND */}
               <Box
                 sx={{
                   bgcolor: "#efe5d6",
@@ -299,4 +319,3 @@ export default function ApplyPage() {
     </StyledEngineProvider>
   );
 }
-

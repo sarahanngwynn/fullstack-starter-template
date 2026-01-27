@@ -85,7 +85,7 @@ export default function RegistrationPage() {
     emailList: [] as string[],
 
     // payment fields (match router naming: expirationDate + cvvNumber)
-    nameOnCard: "",
+    cardName: "",
     cardNumber: "",
     expirationDate: "",
     cvvNumber: "",

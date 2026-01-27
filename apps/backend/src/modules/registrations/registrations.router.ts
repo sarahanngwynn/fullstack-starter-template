@@ -11,7 +11,7 @@ const registrationSchema = z.object({
   custody: z.string().optional().nullable(),
   immunization: z.string().optional().nullable(),
 
-  nameOnCard: z.string().optional().nullable(),
+  cardName : z.string().optional().nullable(),
   cardNumber: z.string().optional().nullable(),
   expirationDate: z.string().optional().nullable(),
   cvvNumber: z.string().optional().nullable(),
@@ -63,7 +63,7 @@ export const registrationsRouter = router({
             tgMembership: input.tgMembership,
             emailList: input.emailList,
             payment: {
-              nameOnCard: input.nameOnCard,
+              cardName : input.cardName,
               cardNumber: input.cardNumber,
               expirationDate: input.expirationDate,
               cvvNumber: input.cvvNumber,

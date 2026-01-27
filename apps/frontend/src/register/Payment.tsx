@@ -22,11 +22,11 @@ export default function PaymentForm(props:any) {
             data-cy="cardName"
             fullWidth
             autoComplete="cc-name"
-            value={props.registration.nameOnCard}
+            value={props.registration.cardName}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
               props.setRegistration({
                 ...props.registration, 
-                nameOnCard: event.target.value,
+                cardName: event.target.value,
               });
             }}
             variant="standard"
