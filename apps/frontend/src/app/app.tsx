@@ -14,6 +14,9 @@ import ApplyPage from '../apply/page';
 import RegistrationPage from "../register/page";
 import ParentDashboard from "../pages/parent";
 import ParentAuthPage from "../pages/parent/auth";
+import ParentProfile from "../app/parent/profile/page";
+
+
 
 export function App() {
   const { queryClient, trpcClient } = useQueryTrpcClient();
@@ -35,7 +38,7 @@ export function App() {
             <Route path="/" element={<Home />} />
             <Route path="/sign-up" element={<SignUpCard />} />
             <Route path="/login" element={<SignInCard />} />
-
+            <Route path="/parent/profile" element={<ParentProfile />} />
             <Route path="/apply" element={<ApplyPage />} />
             <Route path="/register" element={<RegistrationPage />} />
 

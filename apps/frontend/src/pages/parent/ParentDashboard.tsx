@@ -68,6 +68,9 @@ export default function ParentDashboard() {
               >
                 Go to Parent Sign In
               </Button>
+              <Button onClick={() => navigate("/parent/profile")}>
+  View My Profile
+</Button>
             </Box>
           </Alert>
         ) : (

@@ -3,7 +3,7 @@ import { z } from "zod";
 import * as jwt from "jsonwebtoken";
 import { compare, hash } from "bcryptjs";
 
-import { noAuthProcedure, router } from "../../server/trpc";
+import { noAuthProcedure, parentProcedure, router } from "../../server/trpc";
 import { authConfig } from "../../configs/auth.config";
 
 // ---------- Zod schemas ----------
@@ -35,8 +35,7 @@ function signParentToken(parentId: string) {
     throw new Error("JWT secret is missing (set JWT_SECRET in your .env)");
   }
 
-  // We’re *intentionally* making a different payload shape than staff auth.
-  // Later we’ll update createContext() to recognize this.
+  // Parent token payload: recognized by createContext()
   const payload: jwt.JwtPayload = { parentId, type: "parent" } as any;
   const options: jwt.SignOptions = { expiresIn: authConfig.jwtExpiresIn as any };
 
@@ -129,7 +128,6 @@ export const parentsRouter = router({
 
       const accessToken = signParentToken(parent.id);
 
-      // Return a clean shape (no passwordHash)
       return {
         id: parent.id,
         email: parent.email,
@@ -140,4 +138,31 @@ export const parentsRouter = router({
         accessToken,
       };
     }),
+
+  // ✅ Parent-only: return the signed-in parent profile
+  me: parentProcedure.query(async ({ ctx }) => {
+    const parentId = ctx.parent.parentId;
+
+    const parent = await ctx.prisma.parentAccount.findUnique({
+      where: { id: parentId },
+      select: {
+        id: true,
+        email: true,
+        parentName: true,
+        createdAt: true,
+        updatedAt: true,
+        children: {
+          select: { id: true, name: true, age: true, createdAt: true, updatedAt: true },
+          orderBy: { createdAt: "asc" },
+        },
+      },
+    });
+
+    if (!parent) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Parent account not found" });
+    }
+
+    return parent;
+  }),
 });
+
