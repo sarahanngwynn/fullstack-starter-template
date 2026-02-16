@@ -2,14 +2,35 @@
 
 import * as React from "react";
 import { Controller } from "react-hook-form";
-import { Grid, TextField, Checkbox, FormControlLabel, Box } from "@mui/material";
+import {
+  Grid,
+  TextField,
+  Checkbox,
+  FormControlLabel,
+  Box,
+} from "@mui/material";
+
+type Prefill = {
+  parentFirstName?: string;
+  parentLastName?: string;
+  email?: string;
+};
 
 interface Props {
   control: any;
   errors: any;
+
+  // NEW (optional) props from ApplyPage
+  prefill?: Prefill;
+  locked?: { parentIdentityLocked: boolean };
 }
 
-export default function ParentDetails({ control, errors }: Props) {
+export default function ParentDetails({ control, errors, prefill, locked }: Props) {
+  const parentLocked = !!locked?.parentIdentityLocked;
+
+  // Helper text that respects existing validation errors
+  const helperFromAccount = "From your parent account.";
+
   return (
     <Box sx={{ mt: 2 }}>
       <Grid container spacing={2}>
@@ -25,7 +46,12 @@ export default function ParentDetails({ control, errors }: Props) {
                 fullWidth
                 label="Parent First Name"
                 error={!!errors.parentFirstName}
-                helperText={errors.parentFirstName?.message}
+                helperText={
+                  errors.parentFirstName?.message ||
+                  (parentLocked && prefill?.parentFirstName ? helperFromAccount : "")
+                }
+                // lock when signed in
+                InputProps={{ readOnly: parentLocked }}
               />
             )}
           />
@@ -43,7 +69,11 @@ export default function ParentDetails({ control, errors }: Props) {
                 fullWidth
                 label="Parent Last Name"
                 error={!!errors.parentLastName}
-                helperText={errors.parentLastName?.message}
+                helperText={
+                  errors.parentLastName?.message ||
+                  (parentLocked && prefill?.parentLastName ? helperFromAccount : "")
+                }
+                InputProps={{ readOnly: parentLocked }}
               />
             )}
           />
@@ -67,13 +97,17 @@ export default function ParentDetails({ control, errors }: Props) {
                 fullWidth
                 label="Email Address"
                 error={!!errors.email}
-                helperText={errors.email?.message}
+                helperText={
+                  errors.email?.message ||
+                  (parentLocked && prefill?.email ? helperFromAccount : "")
+                }
+                InputProps={{ readOnly: parentLocked }}
               />
             )}
           />
         </Grid>
 
-        {/* Phone */}
+        {/* Phone (keep editable — parents might want a different contact number) */}
         <Grid item xs={12}>
           <Controller
             name="phoneNumber"

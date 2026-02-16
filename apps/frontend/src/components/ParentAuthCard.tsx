@@ -1,5 +1,25 @@
 import React, { useMemo, useState } from "react";
-import { trpc } from "../utils/trpc"; // <-- adjust path if your trpc client lives elsewhere
+import {
+  Alert,
+  AlertIcon,
+  Box,
+  Button,
+  Divider,
+  FormControl,
+  FormLabel,
+  Heading,
+  HStack,
+  IconButton,
+  Input,
+  NumberInput,
+  NumberInputField,
+  Stack,
+  Text,
+  VStack,
+  Spinner,
+} from "@chakra-ui/react";
+import { CloseIcon } from "@chakra-ui/icons";
+import { trpc } from "../utils/trpc";
 
 type ChildInput = { name: string; age: number };
 
@@ -37,6 +57,8 @@ export function ParentAuthCard({ onAuthed }: Props) {
 
   const emailExists = checkEmailQuery.data?.exists;
 
+  const busy = signUp.isPending || signIn.isPending;
+
   function persistToken(token: string) {
     localStorage.setItem("parent_access_token", token);
     onAuthed?.(token);
@@ -60,13 +82,11 @@ export function ParentAuthCard({ onAuthed }: Props) {
     e.preventDefault();
 
     const cleanedEmail = emailNormalized;
-
     if (!cleanedEmail) return;
 
-    // If you want: auto-switch based on email existence
-    // (super nice UX)
-    if (emailExists === true) setMode("signin");
-    if (emailExists === false) setMode("signup");
+    // Gentle auto-switch based on existence (nice UX)
+    if (emailExists === true && mode === "signup") setMode("signin");
+    if (emailExists === false && mode === "signin") setMode("signup");
 
     try {
       if (mode === "signup") {
@@ -94,247 +114,245 @@ export function ParentAuthCard({ onAuthed }: Props) {
         persistToken(res.accessToken);
       }
     } catch {
-      // errors are shown below from mutation error messages
+      // mutation errors displayed below
     }
   }
 
-  const busy = signUp.isPending || signIn.isPending;
+  // ✅ FORCE LIGHT THEME LOOK (matches Apply page)
+  const panelBg = "white";
+  const border = "gray.200";
+  const subtle = "gray.600";
+  const helperBg = "gray.50";
+
+  const disableSubmit =
+    busy ||
+    !emailNormalized ||
+    !password ||
+    (mode === "signup" && !parentName.trim());
 
   return (
-    <div
-      style={{
-        maxWidth: 520,
-        margin: "0 auto",
-        padding: 16,
-        border: "1px solid #ddd",
-        borderRadius: 12,
-      }}
+    <Box
+      bg={panelBg}
+      border="1px solid"
+      borderColor={border}
+      borderRadius="2xl"
+      p={{ base: 5, md: 6 }}
+      color="gray.800"
     >
-      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-        <button
-          type="button"
-          onClick={() => setMode("signup")}
-          disabled={busy}
-          style={{
-            padding: "8px 12px",
-            borderRadius: 10,
-            border: "1px solid #ccc",
-            background: mode === "signup" ? "#eee" : "#fff",
-            cursor: "pointer",
-          }}
-        >
-          Sign up
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("signin")}
-          disabled={busy}
-          style={{
-            padding: "8px 12px",
-            borderRadius: 10,
-            border: "1px solid #ccc",
-            background: mode === "signin" ? "#eee" : "#fff",
-            cursor: "pointer",
-          }}
-        >
-          Sign in
-        </button>
-      </div>
+      <VStack align="stretch" spacing={5}>
+        <HStack justify="space-between" align="center">
+          <Heading size="sm" color="gray.800">
+            {mode === "signup" ? "Create your parent account" : "Sign in"}
+          </Heading>
 
-      <form onSubmit={handleSubmit}>
-        <label style={{ display: "block", marginBottom: 6 }}>
-          Email
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-            disabled={busy}
-            style={{
-              width: "100%",
-              padding: 10,
-              borderRadius: 10,
-              border: "1px solid #ccc",
-              marginTop: 6,
-            }}
-          />
-        </label>
-
-        <div style={{ fontSize: 13, marginBottom: 10, minHeight: 18 }}>
-          {checkEmailQuery.isFetching && emailNormalized ? (
-            <span>Checking email…</span>
-          ) : emailExists === true ? (
-            <span>
-              Account found — you can{" "}
-              <button
-                type="button"
-                onClick={() => setMode("signin")}
-                disabled={busy}
-                style={{ border: "none", background: "transparent", color: "#06c", cursor: "pointer", padding: 0 }}
-              >
-                sign in
-              </button>
-              .
-            </span>
-          ) : emailExists === false && emailNormalized ? (
-            <span>
-              No account yet — you can{" "}
-              <button
-                type="button"
-                onClick={() => setMode("signup")}
-                disabled={busy}
-                style={{ border: "none", background: "transparent", color: "#06c", cursor: "pointer", padding: 0 }}
-              >
-                create one
-              </button>
-              .
-            </span>
-          ) : null}
-        </div>
-
-        {mode === "signup" && (
-          <>
-            <label style={{ display: "block", marginBottom: 10 }}>
-              Parent name
-              <input
-                value={parentName}
-                onChange={(e) => setParentName(e.target.value)}
-                autoComplete="name"
-                disabled={busy}
-                style={{
-                  width: "100%",
-                  padding: 10,
-                  borderRadius: 10,
-                  border: "1px solid #ccc",
-                  marginTop: 6,
-                }}
-              />
-            </label>
-          </>
-        )}
-
-        <label style={{ display: "block", marginBottom: 12 }}>
-          Password
-          <input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            type="password"
-            autoComplete={mode === "signup" ? "new-password" : "current-password"}
-            disabled={busy}
-            style={{
-              width: "100%",
-              padding: 10,
-              borderRadius: 10,
-              border: "1px solid #ccc",
-              marginTop: 6,
-            }}
-          />
-        </label>
-
-        {mode === "signup" && (
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>Children</div>
-
-            {children.map((c, idx) => (
-              <div
-                key={idx}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 120px 90px",
-                  gap: 8,
-                  alignItems: "center",
-                  marginBottom: 8,
-                }}
-              >
-                <input
-                  placeholder="Child name"
-                  value={c.name}
-                  onChange={(e) => updateChild(idx, { name: e.target.value })}
-                  disabled={busy}
-                  style={{
-                    padding: 10,
-                    borderRadius: 10,
-                    border: "1px solid #ccc",
-                  }}
-                />
-                <input
-                  placeholder="Age"
-                  value={c.age}
-                  onChange={(e) =>
-                    updateChild(idx, { age: Number(e.target.value) })
-                  }
-                  type="number"
-                  min={0}
-                  max={25}
-                  disabled={busy}
-                  style={{
-                    padding: 10,
-                    borderRadius: 10,
-                    border: "1px solid #ccc",
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => removeChildRow(idx)}
-                  disabled={busy || children.length === 1}
-                  style={{
-                    padding: "10px 12px",
-                    borderRadius: 10,
-                    border: "1px solid #ccc",
-                    background: "#fff",
-                    cursor: "pointer",
-                  }}
-                  title={children.length === 1 ? "Keep at least one row" : "Remove"}
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-
-            <button
-              type="button"
-              onClick={addChildRow}
-              disabled={busy}
-              style={{
-                padding: "10px 12px",
-                borderRadius: 10,
-                border: "1px solid #ccc",
-                background: "#fff",
-                cursor: "pointer",
-              }}
+          <HStack spacing={2}>
+            <Button
+              size="sm"
+              variant={mode === "signup" ? "solid" : "outline"}
+              colorScheme="teal"
+              onClick={() => setMode("signup")}
+              isDisabled={busy}
             >
-              + Add another child
-            </button>
-          </div>
-        )}
+              Sign up
+            </Button>
+            <Button
+              size="sm"
+              variant={mode === "signin" ? "solid" : "outline"}
+              colorScheme="teal"
+              onClick={() => setMode("signin")}
+              isDisabled={busy}
+            >
+              Sign in
+            </Button>
+          </HStack>
+        </HStack>
 
-        <button
-          type="submit"
-          disabled={busy || !emailNormalized || !password || (mode === "signup" && !parentName.trim())}
-          style={{
-            width: "100%",
-            padding: 12,
-            borderRadius: 12,
-            border: "1px solid #333",
-            background: "#111",
-            color: "white",
-            cursor: "pointer",
-            opacity:
-              busy || !emailNormalized || !password || (mode === "signup" && !parentName.trim())
-                ? 0.7
-                : 1,
-          }}
-        >
-          {busy ? "Working…" : mode === "signup" ? "Create account" : "Sign in"}
-        </button>
+        <Divider />
 
-        <div style={{ marginTop: 12, minHeight: 18, color: "#b00020" }}>
-          {signUp.error?.message || signIn.error?.message || ""}
-        </div>
-      </form>
+        <Box as="form" onSubmit={handleSubmit}>
+          <Stack spacing={4}>
+            <FormControl isRequired>
+              <FormLabel color="gray.800">Email</FormLabel>
+              <Input
+                bg="white"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                isDisabled={busy}
+                placeholder="you@email.com"
+                type="email"
+              />
+            </FormControl>
 
-      <div style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
-        Token is stored as <code>parent_access_token</code> in localStorage.
-      </div>
-    </div>
+            <Box minH="22px">
+              {checkEmailQuery.isFetching && emailNormalized ? (
+                <HStack spacing={2} color={subtle} fontSize="sm">
+                  <Spinner size="xs" />
+                  <Text>Checking email…</Text>
+                </HStack>
+              ) : emailExists === true ? (
+                <Box bg={helperBg} borderRadius="lg" p={3} border="1px solid" borderColor="gray.200">
+                  <Text fontSize="sm" color="gray.700">
+                    Account found — you can{" "}
+                    <Button
+                      variant="link"
+                      size="sm"
+                      onClick={() => setMode("signin")}
+                      isDisabled={busy}
+                      colorScheme="teal"
+                      fontWeight="semibold"
+                    >
+                      sign in
+                    </Button>
+                    .
+                  </Text>
+                </Box>
+              ) : emailExists === false && emailNormalized ? (
+                <Box bg={helperBg} borderRadius="lg" p={3} border="1px solid" borderColor="gray.200">
+                  <Text fontSize="sm" color="gray.700">
+                    No account yet — you can{" "}
+                    <Button
+                      variant="link"
+                      size="sm"
+                      onClick={() => setMode("signup")}
+                      isDisabled={busy}
+                      colorScheme="teal"
+                      fontWeight="semibold"
+                    >
+                      create one
+                    </Button>
+                    .
+                  </Text>
+                </Box>
+              ) : null}
+            </Box>
+
+            {mode === "signup" && (
+              <FormControl isRequired>
+                <FormLabel color="gray.800">Parent name</FormLabel>
+                <Input
+                  bg="white"
+                  value={parentName}
+                  onChange={(e) => setParentName(e.target.value)}
+                  autoComplete="name"
+                  isDisabled={busy}
+                  placeholder="First Last"
+                />
+              </FormControl>
+            )}
+
+            <FormControl isRequired>
+              <FormLabel color="gray.800">Password</FormLabel>
+              <Input
+                bg="white"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                type="password"
+                autoComplete={
+                  mode === "signup" ? "new-password" : "current-password"
+                }
+                isDisabled={busy}
+                placeholder="••••••••"
+              />
+            </FormControl>
+
+            {mode === "signup" && (
+              <Box>
+                <Text fontWeight="semibold" mb={2} color="gray.800">
+                  Children
+                </Text>
+
+                <Stack spacing={3}>
+                  {children.map((c, idx) => (
+                    <HStack key={idx} spacing={3} align="end">
+                      <FormControl>
+                        <FormLabel fontSize="sm" color="gray.800">
+                          Child name
+                        </FormLabel>
+                        <Input
+                          bg="white"
+                          value={c.name}
+                          onChange={(e) =>
+                            updateChild(idx, { name: e.target.value })
+                          }
+                          isDisabled={busy}
+                          placeholder="Child name"
+                        />
+                      </FormControl>
+
+                      <FormControl w="140px">
+                        <FormLabel fontSize="sm" color="gray.800">
+                          Age
+                        </FormLabel>
+                        <NumberInput
+                          value={c.age}
+                          min={0}
+                          max={25}
+                          onChange={(_, n) =>
+                            updateChild(idx, {
+                              age: Number.isFinite(n) ? n : 0,
+                            })
+                          }
+                          isDisabled={busy}
+                        >
+                          <NumberInputField bg="white" />
+                        </NumberInput>
+                      </FormControl>
+
+                      <IconButton
+                        aria-label="Remove child"
+                        icon={<CloseIcon />}
+                        onClick={() => removeChildRow(idx)}
+                        isDisabled={busy || children.length === 1}
+                        variant="outline"
+                        title={
+                          children.length === 1
+                            ? "Keep at least one row"
+                            : "Remove"
+                        }
+                      />
+                    </HStack>
+                  ))}
+
+                  <Button
+                    onClick={addChildRow}
+                    isDisabled={busy}
+                    variant="outline"
+                    colorScheme="teal"
+                    alignSelf="flex-start"
+                  >
+                    + Add another child
+                  </Button>
+                </Stack>
+              </Box>
+            )}
+
+            <Button
+              type="submit"
+              colorScheme="teal"
+              size="lg"
+              isLoading={busy}
+              isDisabled={disableSubmit}
+            >
+              {mode === "signup" ? "Create account" : "Sign in"}
+            </Button>
+
+            {(signUp.error?.message || signIn.error?.message) && (
+              <Alert status="error" borderRadius="lg">
+                <AlertIcon />
+                {signUp.error?.message || signIn.error?.message}
+              </Alert>
+            )}
+
+            <Text fontSize="sm" color={subtle}>
+              Token is stored as <code>parent_access_token</code> in localStorage.
+            </Text>
+          </Stack>
+        </Box>
+      </VStack>
+    </Box>
   );
 }
+
+
+

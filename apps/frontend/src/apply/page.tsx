@@ -43,17 +43,15 @@ type FormValues = {
   childBirthDate: string;
   anyConcerns?: string;
 
-  // IMPORTANT: make these strings (not null) to match backend z.string()
   desiredLocation: string;
   desiredProgram: string;
 
-  // Backend-required payment fields
   paymentMethod: PaymentMethod;
   billingZip: string;
   authorizePayment: boolean;
   cardName: string;
 
-  // UI-only fields (DO NOT send/store)
+  // UI-only fields
   cardNumber?: string;
   expirationDate?: string;
   cvvNumber?: string;
@@ -71,12 +69,39 @@ const muiTheme = createTheme({
   },
 });
 
-function getStepContent(step: number, control: any, errors: any) {
+type Prefill = {
+  parentFirstName?: string;
+  parentLastName?: string;
+  email?: string;
+  childFullName?: string;
+};
+
+function getStepContent(
+  step: number,
+  control: any,
+  errors: any,
+  prefill: Prefill,
+  locked: { parentIdentityLocked: boolean }
+) {
   switch (step) {
     case 0:
-      return <ParentDetails control={control} errors={errors} />;
+      return (
+        <ParentDetails
+          control={control}
+          errors={errors}
+          prefill={prefill}
+          locked={locked}
+        />
+      );
     case 1:
-      return <ChildsDetails control={control} errors={errors} />;
+      return (
+        <ChildsDetails
+          control={control}
+          errors={errors}
+          prefill={prefill}
+          locked={locked}
+        />
+      );
     case 2:
       return <Location control={control} errors={errors} />;
     case 3:
@@ -92,6 +117,11 @@ export default function ApplyPage() {
   const [activeStep, setActiveStep] = React.useState(0);
 
   const submitApplication = trpc.applications.submit.useMutation();
+
+  // ✅ fetch signed-in parent profile (token comes from your RequireParentAuth + trpc header logic)
+  const meQuery = trpc.parents.me.useQuery(undefined, {
+    retry: false,
+  });
 
   const methods = useForm<FormValues>({
     defaultValues: {
@@ -114,7 +144,6 @@ export default function ApplyPage() {
       authorizePayment: false,
       cardName: "",
 
-      // UI-only
       cardNumber: "",
       expirationDate: "",
       cvvNumber: "",
@@ -122,10 +151,81 @@ export default function ApplyPage() {
     mode: "onSubmit",
   });
 
-  const { handleSubmit } = methods;
+  const { handleSubmit, setValue, getValues } = methods;
+
+  // ✅ Prefill values derived from parent profile
+  const prefill = React.useMemo<Prefill>(() => {
+    const me: any = meQuery.data;
+    if (!me) return {};
+
+    // You might store parentName as a single string. We’ll try to split it.
+    const fullName =
+      (me.firstName && me.lastName
+        ? `${me.firstName} ${me.lastName}`
+        : me.parentName) ?? "";
+
+    let firstName = me.firstName ?? "";
+    let lastName = me.lastName ?? "";
+
+    if ((!firstName || !lastName) && typeof fullName === "string" && fullName.trim()) {
+      const parts = fullName.trim().split(/\s+/);
+      firstName = firstName || parts[0] || "";
+      lastName = lastName || parts.slice(1).join(" ") || "";
+    }
+
+    // Optional: first child prefill
+    const child0 = Array.isArray(me.children) && me.children.length ? me.children[0] : null;
+    const childFullName =
+      child0?.fullName ??
+      child0?.name ??
+      [child0?.firstName, child0?.lastName].filter(Boolean).join(" ") ??
+      "";
+
+    return {
+      parentFirstName: firstName,
+      parentLastName: lastName,
+      email: (me.email ?? "").toLowerCase(),
+      childFullName: childFullName || undefined,
+    };
+  }, [meQuery.data]);
+
+  // ✅ lock parent identity fields when signed in (prevents mismatch + redundancy)
+  const locked = React.useMemo(
+    () => ({
+      parentIdentityLocked: !!prefill.email,
+    }),
+    [prefill.email]
+  );
+
+  // ✅ Prefill ONCE (don’t overwrite what user has already typed)
+  const didPrefillRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (didPrefillRef.current) return;
+    if (!prefill.email) return;
+
+    const current = getValues();
+
+    // Only set if empty (so we don't clobber any typing)
+    if (!current.parentFirstName && prefill.parentFirstName) {
+      setValue("parentFirstName", prefill.parentFirstName);
+    }
+    if (!current.parentLastName && prefill.parentLastName) {
+      setValue("parentLastName", prefill.parentLastName);
+    }
+    if (!current.email && prefill.email) {
+      setValue("email", prefill.email);
+    }
+
+    // Optional child prefill (only if empty)
+    if (!current.childFullName && prefill.childFullName) {
+      setValue("childFullName", prefill.childFullName);
+    }
+
+    didPrefillRef.current = true;
+  }, [prefill, getValues, setValue]);
 
   const onSubmit = (data: FormValues) => {
-    // Only send safe fields that backend expects
     const payload = {
       parentFirstName: data.parentFirstName,
       parentLastName: data.parentLastName,
@@ -145,9 +245,6 @@ export default function ApplyPage() {
       billingZip: data.billingZip,
       authorizePayment: data.authorizePayment,
       cardName: data.cardName,
-
-      // intentionally NOT sending:
-      // cardNumber, expirationDate, cvvNumber
     };
 
     submitApplication.mutate(payload, {
@@ -157,7 +254,6 @@ export default function ApplyPage() {
       },
       onError: (error) => {
         console.error("Failed to save application:", error);
-        // optional: show toast/snackbar
       },
     });
   };
@@ -235,6 +331,13 @@ export default function ApplyPage() {
                   ))}
                 </Stepper>
 
+                {/* Optional tiny note while parent is loading */}
+                {meQuery.isLoading && (
+                  <Typography variant="body2" sx={{ mb: 2, color: "text.secondary" }}>
+                    Loading your parent account…
+                  </Typography>
+                )}
+
                 <FormProvider {...methods}>
                   {activeStep === steps.length ? (
                     <>
@@ -256,7 +359,9 @@ export default function ApplyPage() {
                       {getStepContent(
                         activeStep,
                         methods.control,
-                        methods.formState.errors
+                        methods.formState.errors,
+                        prefill,
+                        locked
                       )}
 
                       <Box
@@ -319,3 +424,4 @@ export default function ApplyPage() {
     </StyledEngineProvider>
   );
 }
+
