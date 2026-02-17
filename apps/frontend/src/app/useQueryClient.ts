@@ -17,9 +17,14 @@ export const useQueryTrpcClient = () => {
           url: APP_URL,
           headers() {
             // ✅ Parent portal routes should send the parent token
-            const isParentRoute =
-              typeof window !== "undefined" &&
-              window.location.pathname.startsWith("/parent");
+            const pathname =
+            typeof window !== "undefined" ? window.location.pathname : "";
+          
+          const isParentRoute =
+            pathname.startsWith("/parent") ||
+            pathname.startsWith("/apply") ||
+            pathname.startsWith("/register");
+          
 
             if (isParentRoute) {
               const parentToken = localStorage.getItem("parent_access_token");

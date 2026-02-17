@@ -75,3 +75,4 @@ export const registrationsRouter = router({
       return { id: app.id };
     }),
 });
+

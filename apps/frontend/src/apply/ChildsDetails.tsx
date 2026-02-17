@@ -18,12 +18,25 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
 
+type Prefill = {
+  childFullName?: string;
+};
+
 interface Props {
   control: any;
   errors: any;
+
+  // NEW (optional) props from ApplyPage
+  prefill?: Prefill;
+  locked?: { parentIdentityLocked: boolean };
 }
 
-export default function ChildsDetails({ control, errors }: Props) {
+export default function ChildsDetails({ control, errors, prefill, locked }: Props) {
+  // If we prefilled a child name from the parent account, lock it by default
+  const childNameLocked = !!locked?.parentIdentityLocked && !!prefill?.childFullName;
+
+  const helperFromAccount = "From your parent account.";
+
   return (
     <Box sx={{ mt: 2 }}>
       <Grid container spacing={2}>
@@ -39,7 +52,12 @@ export default function ChildsDetails({ control, errors }: Props) {
                 fullWidth
                 label="Child's Full Name"
                 error={!!errors.childFullName}
-                helperText={errors.childFullName?.message}
+                helperText={
+                  errors.childFullName?.message ||
+                  (childNameLocked ? helperFromAccount : "")
+                }
+                // Use readOnly so it still submits normally + doesn’t gray out
+                InputProps={{ readOnly: childNameLocked }}
               />
             )}
           />
@@ -117,3 +135,4 @@ export default function ChildsDetails({ control, errors }: Props) {
     </Box>
   );
 }
+

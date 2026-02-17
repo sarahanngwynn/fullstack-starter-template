@@ -35,7 +35,8 @@ function signParentToken(parentId: string) {
     throw new Error("JWT secret is missing (set JWT_SECRET in your .env)");
   }
 
-  // Parent token payload: recognized by createContext()
+  // We’re *intentionally* making a different payload shape than staff auth.
+  // Later we’ll update createContext() to recognize this.
   const payload: jwt.JwtPayload = { parentId, type: "parent" } as any;
   const options: jwt.SignOptions = { expiresIn: authConfig.jwtExpiresIn as any };
 
@@ -128,6 +129,7 @@ export const parentsRouter = router({
 
       const accessToken = signParentToken(parent.id);
 
+      // Return a clean shape (no passwordHash)
       return {
         id: parent.id,
         email: parent.email,
@@ -139,7 +141,7 @@ export const parentsRouter = router({
       };
     }),
 
-  // ✅ Parent-only: return the signed-in parent profile
+  // Parent-only: return the signed-in parent profile
   me: parentProcedure.query(async ({ ctx }) => {
     const parentId = ctx.parent.parentId;
 

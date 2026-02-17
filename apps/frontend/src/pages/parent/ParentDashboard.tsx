@@ -68,9 +68,6 @@ export default function ParentDashboard() {
               >
                 Go to Parent Sign In
               </Button>
-              <Button onClick={() => navigate("/parent/profile")}>
-  View My Profile
-</Button>
             </Box>
           </Alert>
         ) : (
@@ -100,6 +97,14 @@ export default function ParentDashboard() {
               </Text>
 
               <HStack spacing={3} flexWrap="wrap">
+                <Button
+                  colorScheme="teal"
+                  variant="outline"
+                  onClick={() => navigate("/parent/profile")}
+                >
+                  View My Profile
+                </Button>
+
                 <Button
                   colorScheme="blue"
                   onClick={() => navigate("/register")}
