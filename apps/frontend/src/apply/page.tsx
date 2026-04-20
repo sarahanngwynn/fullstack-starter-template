@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { trpc } from "../utils/trpc";
+import { useNavigate } from "react-router-dom";
 
 import {
   StyledEngineProvider,
@@ -57,7 +58,20 @@ type FormValues = {
   cvvNumber?: string;
 };
 
-const steps = ["Parent Details", "Child Details", "Location", "Program", "Payment"];
+type Prefill = {
+  parentFirstName?: string;
+  parentLastName?: string;
+  email?: string;
+  childFullName?: string;
+};
+
+const steps = [
+  "Parent Details",
+  "Child Details",
+  "Location",
+  "Program",
+  "Payment",
+];
 
 const muiTheme = createTheme({
   palette: {
@@ -68,13 +82,6 @@ const muiTheme = createTheme({
     fontFamily: '"Nunito", "Helvetica", "Arial", sans-serif',
   },
 });
-
-type Prefill = {
-  parentFirstName?: string;
-  parentLastName?: string;
-  email?: string;
-  childFullName?: string;
-};
 
 function getStepContent(
   step: number,
@@ -114,12 +121,19 @@ function getStepContent(
 }
 
 export default function ApplyPage() {
+  const navigate = useNavigate();
+
   const [activeStep, setActiveStep] = React.useState(0);
+  const [parentToken, setParentToken] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    setParentToken(localStorage.getItem("parent_access_token"));
+  }, []);
 
   const submitApplication = trpc.applications.submit.useMutation();
 
-  // ✅ fetch signed-in parent profile (token comes from your RequireParentAuth + trpc header logic)
   const meQuery = trpc.parents.me.useQuery(undefined, {
+    enabled: !!parentToken,
     retry: false,
   });
 
@@ -153,12 +167,10 @@ export default function ApplyPage() {
 
   const { handleSubmit, setValue, getValues } = methods;
 
-  // ✅ Prefill values derived from parent profile
   const prefill = React.useMemo<Prefill>(() => {
     const me: any = meQuery.data;
     if (!me) return {};
 
-    // You might store parentName as a single string. We’ll try to split it.
     const fullName =
       (me.firstName && me.lastName
         ? `${me.firstName} ${me.lastName}`
@@ -173,8 +185,9 @@ export default function ApplyPage() {
       lastName = lastName || parts.slice(1).join(" ") || "";
     }
 
-    // Optional: first child prefill
-    const child0 = Array.isArray(me.children) && me.children.length ? me.children[0] : null;
+    const child0 =
+      Array.isArray(me.children) && me.children.length ? me.children[0] : null;
+
     const childFullName =
       child0?.fullName ??
       child0?.name ??
@@ -189,7 +202,6 @@ export default function ApplyPage() {
     };
   }, [meQuery.data]);
 
-  // ✅ lock parent identity fields when signed in (prevents mismatch + redundancy)
   const locked = React.useMemo(
     () => ({
       parentIdentityLocked: !!prefill.email,
@@ -197,7 +209,6 @@ export default function ApplyPage() {
     [prefill.email]
   );
 
-  // ✅ Prefill ONCE (don’t overwrite what user has already typed)
   const didPrefillRef = React.useRef(false);
 
   React.useEffect(() => {
@@ -206,7 +217,6 @@ export default function ApplyPage() {
 
     const current = getValues();
 
-    // Only set if empty (so we don't clobber any typing)
     if (!current.parentFirstName && prefill.parentFirstName) {
       setValue("parentFirstName", prefill.parentFirstName);
     }
@@ -216,8 +226,6 @@ export default function ApplyPage() {
     if (!current.email && prefill.email) {
       setValue("email", prefill.email);
     }
-
-    // Optional child prefill (only if empty)
     if (!current.childFullName && prefill.childFullName) {
       setValue("childFullName", prefill.childFullName);
     }
@@ -250,10 +258,13 @@ export default function ApplyPage() {
     submitApplication.mutate(payload, {
       onSuccess: (result: { id: string }) => {
         console.log("Saved to backend with id:", result.id);
-        setActiveStep(steps.length);
+        navigate("/parent?application=submitted", { replace: true });
       },
-      onError: (error) => {
+      onError: (error: any) => {
         console.error("Failed to save application:", error);
+        console.error("message:", error?.message);
+        console.error("data:", error?.data);
+        console.error("shape:", error?.shape);
       },
     });
   };
@@ -274,7 +285,6 @@ export default function ApplyPage() {
             }}
           >
             <Container component="main" maxWidth="md">
-              {/* HERO BAND */}
               <Box
                 sx={{
                   bgcolor: "#efe5d6",
@@ -311,7 +321,6 @@ export default function ApplyPage() {
                 </Typography>
               </Box>
 
-              {/* FORM CARD */}
               <Paper
                 variant="outlined"
                 sx={{
@@ -331,7 +340,6 @@ export default function ApplyPage() {
                   ))}
                 </Stepper>
 
-                {/* Optional tiny note while parent is loading */}
                 {meQuery.isLoading && (
                   <Typography variant="body2" sx={{ mb: 2, color: "text.secondary" }}>
                     Loading your parent account…
@@ -339,73 +347,56 @@ export default function ApplyPage() {
                 )}
 
                 <FormProvider {...methods}>
-                  {activeStep === steps.length ? (
-                    <>
-                      <Typography variant="h5" gutterBottom sx={{ mb: 1 }}>
-                        Thank you for applying! 🎉
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 3 }}>
-                        We’ve received your application and will be in touch
-                        shortly with next steps.
-                      </Typography>
-                      <Box sx={{ mt: 2 }}>
-                        <Link href="/" underline="hover">
-                          Return home
-                        </Link>
-                      </Box>
-                    </>
-                  ) : (
-                    <form onSubmit={handleSubmit(onSubmit)}>
-                      {getStepContent(
-                        activeStep,
-                        methods.control,
-                        methods.formState.errors,
-                        prefill,
-                        locked
+                  <form onSubmit={handleSubmit(onSubmit)}>
+                    {getStepContent(
+                      activeStep,
+                      methods.control,
+                      methods.formState.errors,
+                      prefill,
+                      locked
+                    )}
+
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        mt: 4,
+                      }}
+                    >
+                      {activeStep !== 0 && (
+                        <Button
+                          onClick={handleBack}
+                          sx={{ mr: 1.5 }}
+                          variant="text"
+                        >
+                          Back
+                        </Button>
                       )}
 
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "flex-end",
-                          mt: 4,
-                        }}
-                      >
-                        {activeStep !== 0 && (
-                          <Button
-                            onClick={handleBack}
-                            sx={{ mr: 1.5 }}
-                            variant="text"
-                          >
-                            Back
-                          </Button>
-                        )}
-
-                        {activeStep === steps.length - 1 ? (
-                          <Button
-                            type="submit"
-                            variant="contained"
-                            color="primary"
-                            sx={{ borderRadius: 999, px: 3 }}
-                            disabled={submitApplication.isLoading}
-                          >
-                            {submitApplication.isLoading
-                              ? "Submitting..."
-                              : "Apply Now"}
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="contained"
-                            color="primary"
-                            sx={{ borderRadius: 999, px: 3 }}
-                            onClick={handleNext}
-                          >
-                            Next
-                          </Button>
-                        )}
-                      </Box>
-                    </form>
-                  )}
+                      {activeStep === steps.length - 1 ? (
+                        <Button
+                          type="submit"
+                          variant="contained"
+                          color="primary"
+                          sx={{ borderRadius: 999, px: 3 }}
+                          disabled={submitApplication.isLoading}
+                        >
+                          {submitApplication.isLoading
+                            ? "Submitting..."
+                            : "Apply Now"}
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          sx={{ borderRadius: 999, px: 3 }}
+                          onClick={handleNext}
+                        >
+                          Next
+                        </Button>
+                      )}
+                    </Box>
+                  </form>
                 </FormProvider>
               </Paper>
 
@@ -424,4 +415,3 @@ export default function ApplyPage() {
     </StyledEngineProvider>
   );
 }
-

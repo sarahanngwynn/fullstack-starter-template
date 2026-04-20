@@ -1,27 +1,63 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Box, Spinner, Text, VStack } from "@chakra-ui/react";
 
-export function RequireParentAuth({ children }: { children: React.ReactNode }) {
+const TOKEN_KEY = "parent_access_token";
+
+export function RequireParentAuth({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [checked, setChecked] = useState(false);
+  const [authorized, setAuthorized] = useState(false);
+
   useEffect(() => {
-    const token = localStorage.getItem("parent_access_token");
+    const token = localStorage.getItem(TOKEN_KEY);
+
     if (!token) {
-      const redirect = encodeURIComponent(location.pathname + location.search);
+      const redirect = encodeURIComponent(
+        location.pathname + location.search
+      );
+
       navigate(`/parent/auth?redirect=${redirect}`, { replace: true });
+
+      setAuthorized(false);
+      setChecked(true);
+      return;
     }
+
+    setAuthorized(true);
+    setChecked(true);
   }, [navigate, location.pathname, location.search]);
 
-  // While redirecting / checking:
-  return (
-    <Box p={10}>
-      <VStack spacing={3}>
-        <Spinner />
-        <Text>Checking parent sign-in…</Text>
-      </VStack>
-      <Box mt={6}>{children}</Box>
-    </Box>
-  );
+  // ⏳ Still checking auth
+  if (!checked) {
+    return (
+      <Box p={10}>
+        <VStack spacing={3}>
+          <Spinner />
+          <Text>Checking parent sign-in…</Text>
+        </VStack>
+      </Box>
+    );
+  }
+
+  // 🔁 Redirecting (no token)
+  if (!authorized) {
+    return (
+      <Box p={10}>
+        <VStack spacing={3}>
+          <Spinner />
+          <Text>Redirecting to parent sign-in…</Text>
+        </VStack>
+      </Box>
+    );
+  }
+
+  // ✅ Authorized — now render children
+  return <>{children}</>;
 }

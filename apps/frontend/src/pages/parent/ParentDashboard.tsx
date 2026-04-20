@@ -1,5 +1,7 @@
-"Use Client"
+"use client";
+
 import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
   Button,
@@ -10,13 +12,17 @@ import {
   AlertIcon,
   HStack,
 } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
 
 const TOKEN_KEY = "parent_access_token";
 
 export default function ParentDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [token, setToken] = useState<string | null>(null);
+
+  const params = new URLSearchParams(location.search);
+  const justSubmitted = params.get("application") === "submitted";
 
   useEffect(() => {
     setToken(localStorage.getItem(TOKEN_KEY));
@@ -33,6 +39,24 @@ export default function ParentDashboard() {
       boxShadow="md"
     >
       <VStack align="stretch" spacing={6}>
+        {justSubmitted && (
+          <Box
+            mt={2}
+            mb={2}
+            p={4}
+            borderRadius="md"
+            bg="green.50"
+            border="1px solid"
+            borderColor="green.200"
+            color="green.800"
+          >
+            <Text fontWeight="bold">Application in progress</Text>
+            <Text mt={1}>
+              Your application was submitted successfully and is now in progress.
+            </Text>
+          </Box>
+        )}
+
         {/* Header */}
         <Box>
           <Heading size="lg" color="gray.800">
@@ -54,9 +78,7 @@ export default function ParentDashboard() {
           >
             <AlertIcon />
             <Box>
-              <Text fontWeight="semibold">
-                You’re not signed in.
-              </Text>
+              <Text fontWeight="semibold">You’re not signed in.</Text>
               <Text fontSize="sm" color="gray.600">
                 Go sign in to continue.
               </Text>
@@ -80,18 +102,11 @@ export default function ParentDashboard() {
               color="gray.800"
             >
               <AlertIcon />
-              <Text fontWeight="semibold">
-                Signed in successfully.
-              </Text>
+              <Text fontWeight="semibold">Signed in successfully.</Text>
             </Alert>
 
             {/* Actions */}
-            <Box
-              borderWidth="1px"
-              borderRadius="md"
-              p={4}
-              bg="gray.50"
-            >
+            <Box borderWidth="1px" borderRadius="md" p={4} bg="gray.50">
               <Text fontWeight="semibold" mb={3}>
                 Quick actions
               </Text>
