@@ -141,30 +141,98 @@ export const parentsRouter = router({
       };
     }),
 
-  // Parent-only: return the signed-in parent profile
-  me: parentProcedure.query(async ({ ctx }) => {
-    const parentId = ctx.parent.parentId;
-
-    const parent = await ctx.prisma.parentAccount.findUnique({
-      where: { id: parentId },
-      select: {
-        id: true,
-        email: true,
-        parentName: true,
-        createdAt: true,
-        updatedAt: true,
-        children: {
-          select: { id: true, name: true, age: true, createdAt: true, updatedAt: true },
-          orderBy: { createdAt: "asc" },
+    me: parentProcedure.query(async ({ ctx }) => {
+      const parentId = ctx.parent.parentId;
+  
+      const parent = await ctx.prisma.parentAccount.findUnique({
+        where: { id: parentId },
+        select: {
+          id: true,
+          email: true,
+          parentName: true,
+          createdAt: true,
+          updatedAt: true,
+          children: {
+            select: {
+              id: true,
+              name: true,
+              age: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+            orderBy: { createdAt: "asc" },
+          },
         },
-      },
-    });
-
-    if (!parent) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "Parent account not found" });
-    }
-
-    return parent;
-  }),
-});
+      });
+  
+      if (!parent) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Parent account not found",
+        });
+      }
+  
+      return parent;
+    }),
+  
+    mySubmissions: parentProcedure.query(async ({ ctx }) => {
+      const parentId = ctx.parent.parentId;
+  
+      const parent = await ctx.prisma.parentAccount.findUnique({
+        where: { id: parentId },
+        select: {
+          email: true,
+        },
+      });
+  
+      if (!parent) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Parent account not found",
+        });
+      }
+  
+      const submissions = await ctx.prisma.application.findMany({
+        where: {
+          guardiansData: {
+            array_contains: [
+              {
+                email: parent.email,
+              },
+            ],
+          },
+        },
+        select: {
+          id: true,
+          createdAt: true,
+          updatedAt: true,
+          siteKey: true,
+          status: true,
+          procareSyncStatus: true,
+          hasPaid: true,
+          childData: true,
+          guardiansData: true,
+          otherData: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+  
+      const applications = submissions.filter((submission) => {
+        const otherData = submission.otherData as { formType?: string } | null;
+        return otherData?.formType !== "REGISTRATION";
+      });
+  
+      const registrations = submissions.filter((submission) => {
+        const otherData = submission.otherData as { formType?: string } | null;
+        return otherData?.formType === "REGISTRATION";
+      });
+  
+      return {
+        applications,
+        registrations,
+      };
+    }),
+  });
 

@@ -1,152 +1,186 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  Box,
-  Button,
-  Heading,
-  Text,
-  VStack,
   Alert,
   AlertIcon,
+  Badge,
+  Box,
+  Button,
+  Divider,
+  Flex,
+  Grid,
+  Heading,
   HStack,
+  SimpleGrid,
+  Spinner,
+  Stat,
+  StatLabel,
+  StatNumber,
+  Text,
+  VStack,
 } from "@chakra-ui/react";
+import { trpc } from "../../utils/trpc";
 
 const TOKEN_KEY = "parent_access_token";
 
 export default function ParentDashboard() {
   const navigate = useNavigate();
-  const location = useLocation();
+  const token = localStorage.getItem(TOKEN_KEY);
 
-  const [token, setToken] = useState<string | null>(null);
+  const { data, isLoading, error } = trpc.parents.mySubmissions.useQuery(
+    undefined,
+    {
+      enabled: !!token,
+    }
+  );
 
-  const params = new URLSearchParams(location.search);
-  const justSubmitted = params.get("application") === "submitted";
+  const applications = data?.applications ?? [];
+  const registrations = data?.registrations ?? [];
 
-  useEffect(() => {
-    setToken(localStorage.getItem(TOKEN_KEY));
-  }, []);
+  if (!token) {
+    return (
+      <Box maxW="900px" mx="auto" mt={8} p={8}>
+        <Alert status="warning" borderRadius="md">
+          <AlertIcon />
+          <Box>
+            <Text fontWeight="semibold">You’re not signed in.</Text>
+            <Text fontSize="sm" color="gray.600">
+              Go sign in to continue.
+            </Text>
+
+            <Button
+              mt={3}
+              colorScheme="orange"
+              onClick={() => navigate("/parent/auth")}
+            >
+              Go to Parent Sign In
+            </Button>
+          </Box>
+        </Alert>
+      </Box>
+    );
+  }
 
   return (
-    <Box
-      maxW="900px"
-      mx="auto"
-      mt={8}
-      p={8}
-      bg="white"
-      borderRadius="lg"
-      boxShadow="md"
-    >
+    <Box maxW="1100px" mx="auto" mt={8} p={{ base: 4, md: 8 }}>
       <VStack align="stretch" spacing={6}>
-        {justSubmitted && (
-          <Box
-            mt={2}
-            mb={2}
-            p={4}
-            borderRadius="md"
-            bg="green.50"
-            border="1px solid"
-            borderColor="green.200"
-            color="green.800"
-          >
-            <Text fontWeight="bold">Application in progress</Text>
-            <Text mt={1}>
-              Your application was submitted successfully and is now in progress.
+        <Flex justify="space-between" align="flex-start" gap={4} wrap="wrap">
+          <Box>
+            <Heading size="lg" color="gray.800">
+              Parent Portal
+            </Heading>
+            <Text mt={2} color="gray.600">
+              View applications, registrations, and parent account details.
             </Text>
+          </Box>
+
+          <HStack spacing={3} flexWrap="wrap">
+            <Button colorScheme="blue" onClick={() => navigate("/register")}>
+              Start Registration
+            </Button>
+
+            <Button variant="outline" onClick={() => navigate("/apply")}>
+              Start Application
+            </Button>
+
+            <Button
+              variant="outline"
+              colorScheme="red"
+              onClick={() => {
+                localStorage.removeItem(TOKEN_KEY);
+                navigate("/parent/auth");
+              }}
+            >
+              Log out
+            </Button>
+          </HStack>
+        </Flex>
+
+        {isLoading && (
+          <Box bg="white" borderWidth="1px" borderRadius="lg" p={6}>
+            <HStack>
+              <Spinner />
+              <Text>Loading your parent portal…</Text>
+            </HStack>
           </Box>
         )}
 
-        {/* Header */}
-        <Box>
-          <Heading size="lg" color="gray.800">
-            Parent Portal
-          </Heading>
-          <Text mt={2} color="gray.600">
-            This is the parent dashboard. Next we’ll show your profile and
-            submissions here.
-          </Text>
-        </Box>
-
-        {/* Not signed in */}
-        {!token ? (
-          <Alert
-            status="warning"
-            borderRadius="md"
-            bg="orange.50"
-            color="gray.800"
-          >
+        {error && (
+          <Alert status="error" borderRadius="md">
             <AlertIcon />
             <Box>
-              <Text fontWeight="semibold">You’re not signed in.</Text>
-              <Text fontSize="sm" color="gray.600">
-                Go sign in to continue.
-              </Text>
-
-              <Button
-                mt={3}
-                colorScheme="orange"
-                onClick={() => navigate("/parent/auth")}
-              >
-                Go to Parent Sign In
-              </Button>
+              <Text fontWeight="semibold">Couldn’t load submissions.</Text>
+              <Text fontSize="sm">{error.message}</Text>
             </Box>
           </Alert>
-        ) : (
+        )}
+
+        {!isLoading && !error && (
           <>
-            {/* Signed in */}
-            <Alert
-              status="success"
-              borderRadius="md"
-              bg="green.50"
-              color="gray.800"
-            >
-              <AlertIcon />
-              <Text fontWeight="semibold">Signed in successfully.</Text>
-            </Alert>
+            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+              <DashboardStat label="Applications" value={applications.length} />
+              <DashboardStat label="Registrations" value={registrations.length} />
+              <DashboardStat
+                label="Total Submissions"
+                value={applications.length + registrations.length}
+              />
+            </SimpleGrid>
 
-            {/* Actions */}
-            <Box borderWidth="1px" borderRadius="md" p={4} bg="gray.50">
-              <Text fontWeight="semibold" mb={3}>
-                Quick actions
-              </Text>
+            <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={6}>
+              <DashboardCard title="Applications">
+                {applications.length === 0 ? (
+                  <EmptyState
+                    text="No applications found yet."
+                    buttonText="Start Application"
+                    onClick={() => navigate("/apply")}
+                  />
+                ) : (
+                  <VStack align="stretch" spacing={3}>
+                    {applications.map((application: any) => (
+                      <SubmissionCard
+                        key={application.id}
+                        submission={application}
+                        typeLabel="Application"
+                      />
+                    ))}
+                  </VStack>
+                )}
+              </DashboardCard>
 
+              <DashboardCard title="Registrations">
+                {registrations.length === 0 ? (
+                  <EmptyState
+                    text="No registrations found yet."
+                    buttonText="Start Registration"
+                    onClick={() => navigate("/register")}
+                  />
+                ) : (
+                  <VStack align="stretch" spacing={3}>
+                    {registrations.map((registration: any) => (
+                      <SubmissionCard
+                        key={registration.id}
+                        submission={registration}
+                        typeLabel="Registration"
+                      />
+                    ))}
+                  </VStack>
+                )}
+              </DashboardCard>
+            </Grid>
+
+            <DashboardCard title="Quick Actions">
               <HStack spacing={3} flexWrap="wrap">
-                <Button
-                  colorScheme="teal"
-                  variant="outline"
-                  onClick={() => navigate("/parent/profile")}
-                >
+                <Button variant="outline" onClick={() => navigate("/parent/profile")}>
                   View My Profile
                 </Button>
 
-                <Button
-                  colorScheme="blue"
-                  onClick={() => navigate("/register")}
-                >
-                  Go to Registration Form
-                </Button>
-
-                <Button
-                  variant="outline"
-                  onClick={() => navigate("/parent/auth")}
-                >
-                  Switch account
-                </Button>
-
-                <Button
-                  variant="outline"
-                  colorScheme="red"
-                  onClick={() => {
-                    localStorage.removeItem(TOKEN_KEY);
-                    setToken(null);
-                    navigate("/parent/auth");
-                  }}
-                >
-                  Log out
+                <Button variant="outline" onClick={() => navigate("/parent/auth")}>
+                  Switch Account
                 </Button>
               </HStack>
-            </Box>
+            </DashboardCard>
           </>
         )}
       </VStack>
@@ -154,3 +188,97 @@ export default function ParentDashboard() {
   );
 }
 
+function DashboardStat({ label, value }: { label: string; value: number }) {
+  return (
+    <Box bg="white" borderWidth="1px" borderRadius="lg" p={5} boxShadow="sm">
+      <Stat>
+        <StatLabel color="gray.600">{label}</StatLabel>
+        <StatNumber color="gray.800">{value}</StatNumber>
+      </Stat>
+    </Box>
+  );
+}
+
+function DashboardCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Box bg="white" borderWidth="1px" borderRadius="lg" p={6} boxShadow="sm">
+      <Heading size="md" color="gray.800" mb={4}>
+        {title}
+      </Heading>
+
+      {children}
+    </Box>
+  );
+}
+
+function EmptyState({
+  text,
+  buttonText,
+  onClick,
+}: {
+  text: string;
+  buttonText: string;
+  onClick: () => void;
+}) {
+  return (
+    <Box bg="gray.50" borderRadius="md" p={5}>
+      <Text color="gray.600" mb={3}>
+        {text}
+      </Text>
+      <Button size="sm" colorScheme="teal" onClick={onClick}>
+        {buttonText}
+      </Button>
+    </Box>
+  );
+}
+
+function SubmissionCard({
+  submission,
+  typeLabel,
+}: {
+  submission: any;
+  typeLabel: string;
+}) {
+  const childData = submission.childData as any;
+  const childName =
+    childData?.firstName && childData?.lastName
+      ? `${childData.firstName} ${childData.lastName}`
+      : childData?.name ?? "Child";
+
+  return (
+    <Box borderWidth="1px" borderRadius="md" p={4} bg="gray.50">
+      <Flex justify="space-between" align="flex-start" gap={3}>
+        <Box>
+          <HStack mb={1}>
+            <Text fontWeight="semibold">{typeLabel}</Text>
+            <Badge colorScheme={submission.hasPaid ? "green" : "yellow"}>
+              {submission.hasPaid ? "Paid" : "Pending"}
+            </Badge>
+          </HStack>
+
+          <Text color="gray.700">{childName}</Text>
+
+          <Text fontSize="sm" color="gray.500">
+            Submitted {new Date(submission.createdAt).toLocaleDateString()}
+          </Text>
+        </Box>
+      </Flex>
+
+      <Divider my={3} />
+
+      <Text fontSize="sm" color="gray.600">
+        Status: {submission.status ?? "Submitted"}
+      </Text>
+
+      <Text fontSize="sm" color="gray.600">
+        Procare Sync: {submission.procareSyncStatus ?? "Not synced"}
+      </Text>
+    </Box>
+  );
+}

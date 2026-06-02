@@ -1,18 +1,31 @@
 "use client";
+
 import React from "react";
+import { Box, Heading, Text, VStack } from "@chakra-ui/react";
 import { ParentAuthCard } from "../../../components/ParentAuthCard";
 
 export default function ParentAuthPage() {
   return (
-    <div style={{ padding: 24, maxWidth: 720, margin: "0 auto" }}>
-      <h1>Parent Portal</h1>
-      <p>Sign in or create an account to continue.</p>
+    <Box bg="#f8f6f1" minH="100vh" py={10} px={4}>
+      <Box maxW="900px" mx="auto">
+        <VStack align="stretch" spacing={6}>
+          <Box>
+            <Heading size="xl" color="gray.800">
+              Parent Portal
+            </Heading>
 
-      <ParentAuthCard
-        onAuthed={() => {
-          window.location.href = "/parent";
-        }}
-      />
-    </div>
+            <Text mt={2} color="gray.600" fontSize="lg">
+              Sign in or create an account to continue.
+            </Text>
+          </Box>
+
+          <ParentAuthCard
+            onAuthed={() => {
+              window.location.href = "/parent";
+            }}
+          />
+        </VStack>
+      </Box>
+    </Box>
   );
 }
