@@ -1,295 +1,196 @@
+"use client";
+
+import React from "react";
 import {
-    Box,
-    Button,
-    Flex,
-    Grid,
-    GridItem,
-    Heading,
-    HStack,
-    Icon,
-    SimpleGrid,
-    Stat,
-    StatLabel,
-    StatNumber,
-    Text,
-    VStack,
-  } from "@chakra-ui/react";
-  
-  import {
-    FiBookOpen,
-    FiCalendar,
-    FiClipboard,
-    FiFileText,
-    FiUsers,
-  } from "react-icons/fi";
-  
-  import { trpc } from "../../utils/trpc";
-  
-  export function ParentDashboard() {
-    const data = {
-        applications: [],
-        registrations: [],
-      };
-      
-      const isLoading = false;
-  
-    if (isLoading) {
-      return (
-        <Box p={8}>
-          <Text>Loading parent portal...</Text>
-        </Box>
-      );
-    }
-  
-    const applications = data?.applications ?? [];
-    const registrations = data?.registrations ?? [];
-  
-    const childrenMap = new Map();
-  
-    applications.forEach((app: any) => {
-      app.children?.forEach((child: any) => {
-        childrenMap.set(child.name, child);
-      });
-    });
-  
-    registrations.forEach((reg: any) => {
-      reg.children?.forEach((child: any) => {
-        childrenMap.set(child.name, child);
-      });
-    });
-  
-    const children = Array.from(childrenMap.values());
-  
-    return (
-      <Box p={8}>
-        <VStack align="stretch" spacing={8}>
-          {/* Header */}
-          <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
-            <Box>
-              <Heading size="lg">Parent Portal</Heading>
-  
-              <Text color="gray.600" mt={1}>
-                Manage registrations, applications, and school information.
-              </Text>
-            </Box>
-  
-            <HStack>
-              <Button colorScheme="teal">
-                New Registration
-              </Button>
-  
-              <Button variant="outline">
-                New Application
-              </Button>
+  Alert,
+  AlertIcon,
+  Badge,
+  Box,
+  Button,
+  Divider,
+  Heading,
+  HStack,
+  SimpleGrid,
+  Spinner,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
+import { trpc } from "../../utils/trpc";
+import { ParentPortalShell } from "./ParentPortalShell";
+
+export function ParentDashboard() {
+  const navigate = useNavigate();
+
+  const meQuery = trpc.parents.me.useQuery();
+
+  return (
+    <ParentPortalShell
+      title="Parent Portal"
+      subtitle="Welcome back. Manage your family information, applications, and registrations."
+    >
+      {meQuery.isLoading && (
+        <Card>
+          <HStack>
+            <Spinner />
+            <Text color="gray.700">Loading your parent portal…</Text>
+          </HStack>
+        </Card>
+      )}
+
+      {meQuery.error && (
+        <Alert status="error" borderRadius="xl">
+          <AlertIcon />
+          <Box>
+            <Text fontWeight="semibold">Couldn’t load your parent portal.</Text>
+            <Text fontSize="sm">{meQuery.error.message}</Text>
+          </Box>
+        </Alert>
+      )}
+
+      {meQuery.data && (
+        <VStack align="stretch" spacing={6}>
+          <Card>
+            <HStack justify="space-between" align="flex-start" flexWrap="wrap" gap={4}>
+              <Box>
+                <Heading size="md" color="gray.800">
+                  Hi, {meQuery.data.parentName}
+                </Heading>
+                <Text mt={1} color="gray.600">
+                  {meQuery.data.email}
+                </Text>
+              </Box>
+
+              <Badge px={3} py={1} borderRadius="full" colorScheme="green">
+                Parent Account
+              </Badge>
             </HStack>
-          </Flex>
-  
-          {/* Stats */}
-          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={5}>
-            <StatCard
-              label="Children"
-              value={children.length}
-              icon={FiUsers}
-            />
-  
-            <StatCard
-              label="Applications"
-              value={applications.length}
-              icon={FiClipboard}
-            />
-  
-            <StatCard
-              label="Registrations"
-              value={registrations.length}
-              icon={FiFileText}
-            />
+          </Card>
+
+          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+            <StatCard label="Children" value={meQuery.data.children.length} />
+            <StatCard label="Applications" value={0} />
+            <StatCard label="Registrations" value={0} />
           </SimpleGrid>
-  
-          {/* Main Grid */}
-          <Grid
-            templateColumns={{ base: "1fr", lg: "2fr 1fr" }}
-            gap={6}
-          >
-            {/* Left Side */}
-            <GridItem>
-              <VStack spacing={6} align="stretch">
-                {/* Children */}
-                <PortalCard title="Your Children">
-                  {children.length === 0 ? (
-                    <Text color="gray.500">
-                      No children added yet.
-                    </Text>
-                  ) : (
-                    <VStack align="stretch" spacing={4}>
-                      {children.map((child: any, index) => (
-                        <Box
-                          key={index}
-                          borderWidth="1px"
-                          borderRadius="lg"
-                          p={4}
-                        >
-                          <Heading size="sm">
-                            {child.name}
-                          </Heading>
-  
-                          <Text color="gray.600" mt={1}>
-                            Age: {child.age || "Unknown"}
-                          </Text>
-                        </Box>
-                      ))}
-                    </VStack>
-                  )}
-                </PortalCard>
-  
-                {/* Applications */}
-                <PortalCard title="Recent Applications">
-                  {applications.length === 0 ? (
-                    <Text color="gray.500">
-                      No applications submitted yet.
-                    </Text>
-                  ) : (
-                    <VStack align="stretch" spacing={3}>
-                      {applications.map((app: any) => (
-                        <Box
-                          key={app.id}
-                          borderWidth="1px"
-                          borderRadius="lg"
-                          p={4}
-                        >
-                          <HStack justify="space-between">
-                            <Box>
-                              <Text fontWeight="bold">
-                                Application Submitted
-                              </Text>
-  
-                              <Text
-                                fontSize="sm"
-                                color="gray.600"
-                              >
-                                {new Date(
-                                  app.createdAt
-                                ).toLocaleDateString()}
-                              </Text>
-                            </Box>
-  
-                            <Button
-                              size="sm"
-                              variant="outline"
-                            >
-                              View
-                            </Button>
-                          </HStack>
-                        </Box>
-                      ))}
-                    </VStack>
-                  )}
-                </PortalCard>
+
+          <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
+            <Card>
+              <Heading size="md" color="gray.800" mb={4}>
+                Children
+              </Heading>
+
+              <Divider mb={4} />
+
+              {meQuery.data.children.length === 0 ? (
+                <EmptyState text="No children added yet." />
+              ) : (
+                <VStack align="stretch" spacing={3}>
+                  {meQuery.data.children.map((child) => (
+                    <Box
+                      key={child.id}
+                      bg="#f8f6f1"
+                      border="1px solid"
+                      borderColor="gray.200"
+                      borderRadius="lg"
+                      p={4}
+                    >
+                      <Text fontWeight="semibold" color="gray.800">
+                        {child.name}
+                      </Text>
+                      <Text color="gray.600" fontSize="sm">
+                        Age: {child.age}
+                      </Text>
+                    </Box>
+                  ))}
+                </VStack>
+              )}
+            </Card>
+
+            <Card>
+              <Heading size="md" color="gray.800" mb={4}>
+                Quick Actions
+              </Heading>
+
+              <Divider mb={4} />
+
+              <VStack align="stretch" spacing={3}>
+                <Button
+                  bg="#5f6f52"
+                  color="white"
+                  _hover={{ bg: "#4f5f44" }}
+                  onClick={() => navigate("/register")}
+                >
+                  Start Registration
+                </Button>
+
+                <Button
+                  variant="outline"
+                  borderColor="gray.300"
+                  color="gray.800"
+                  onClick={() => navigate("/apply")}
+                >
+                  Start Application
+                </Button>
+
+                <Button
+                  variant="outline"
+                  borderColor="gray.300"
+                  color="gray.800"
+                  onClick={() => navigate("/parent/profile")}
+                >
+                  View Parent Profile
+                </Button>
               </VStack>
-            </GridItem>
-  
-            {/* Right Side */}
-            <GridItem>
-              <VStack spacing={6} align="stretch">
-                <PortalCard title="Quick Links">
-                  <VStack align="stretch">
-                    <QuickLink
-                      icon={FiCalendar}
-                      label="School Calendar"
-                    />
-  
-                    <QuickLink
-                      icon={FiBookOpen}
-                      label="Programs"
-                    />
-  
-                    <QuickLink
-                      icon={FiClipboard}
-                      label="Forms"
-                    />
-                  </VStack>
-                </PortalCard>
-  
-                <PortalCard title="Announcements">
-                  <Text color="gray.600">
-                    Welcome to the new parent portal 🎉
-                  </Text>
-                </PortalCard>
-              </VStack>
-            </GridItem>
-          </Grid>
+            </Card>
+          </SimpleGrid>
+
+          <Card>
+            <Heading size="md" color="gray.800" mb={4}>
+              Applications & Registrations
+            </Heading>
+
+            <Divider mb={4} />
+
+            <EmptyState text="Application and registration tracking will appear here once we connect submissions." />
+          </Card>
         </VStack>
-      </Box>
-    );
-  }
-  
-  function PortalCard({
-    title,
-    children,
-  }: {
-    title: string;
-    children: React.ReactNode;
-  }) {
-    return (
-      <Box
-        bg="white"
-        borderRadius="xl"
-        p={6}
-        borderWidth="1px"
-        shadow="sm"
-      >
-        <VStack align="stretch" spacing={4}>
-          <Heading size="md">{title}</Heading>
-  
-          {children}
-        </VStack>
-      </Box>
-    );
-  }
-  
-  function StatCard({
-    label,
-    value,
-    icon,
-  }: {
-    label: string;
-    value: number;
-    icon: any;
-  }) {
-    return (
-      <Box
-        bg="white"
-        borderWidth="1px"
-        borderRadius="xl"
-        p={5}
-        shadow="sm"
-      >
-        <HStack justify="space-between">
-          <Stat>
-            <StatLabel>{label}</StatLabel>
-  
-            <StatNumber>{value}</StatNumber>
-          </Stat>
-  
-          <Icon as={icon} boxSize={6} color="teal.500" />
-        </HStack>
-      </Box>
-    );
-  }
-  
-  function QuickLink({
-    icon,
-    label,
-  }: {
-    icon: any;
-    label: string;
-  }) {
-    return (
-      <Button
-        justifyContent="flex-start"
-        leftIcon={<Icon as={icon} />}
-        variant="ghost"
-      >
+      )}
+    </ParentPortalShell>
+  );
+}
+
+function Card({ children }: { children: React.ReactNode }) {
+  return (
+    <Box
+      bg="white"
+      border="1px solid"
+      borderColor="gray.200"
+      borderRadius="xl"
+      p={6}
+      boxShadow="sm"
+    >
+      {children}
+    </Box>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <Card>
+      <Text fontSize="sm" color="gray.500" fontWeight="semibold">
         {label}
-      </Button>
-    );
-  }
+      </Text>
+      <Text mt={2} fontSize="3xl" fontWeight="bold" color="gray.800">
+        {value}
+      </Text>
+    </Card>
+  );
+}
+
+function EmptyState({ text }: { text: string }) {
+  return (
+    <Box bg="#f8f6f1" borderRadius="lg" p={5}>
+      <Text color="gray.600">{text}</Text>
+    </Box>
+  );
+}

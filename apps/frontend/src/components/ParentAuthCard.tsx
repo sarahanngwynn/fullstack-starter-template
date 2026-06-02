@@ -13,6 +13,7 @@ import {
   Input,
   NumberInput,
   NumberInputField,
+  SimpleGrid,
   Stack,
   Text,
   VStack,
@@ -56,7 +57,6 @@ export function ParentAuthCard({ onAuthed }: Props) {
   const signIn = trpc.parents.signIn.useMutation();
 
   const emailExists = checkEmailQuery.data?.exists;
-
   const busy = signUp.isPending || signIn.isPending;
 
   function persistToken(token: string) {
@@ -84,10 +84,6 @@ export function ParentAuthCard({ onAuthed }: Props) {
     const cleanedEmail = emailNormalized;
     if (!cleanedEmail) return;
 
-    // Gentle auto-switch based on existence (nice UX)
-    if (emailExists === true && mode === "signup") setMode("signin");
-    if (emailExists === false && mode === "signin") setMode("signup");
-
     try {
       if (mode === "signup") {
         const cleanedChildren = children
@@ -114,15 +110,9 @@ export function ParentAuthCard({ onAuthed }: Props) {
         persistToken(res.accessToken);
       }
     } catch {
-      // mutation errors displayed below
+      // mutation errors render below
     }
   }
-
-  // ✅ FORCE LIGHT THEME LOOK (matches Apply page)
-  const panelBg = "white";
-  const border = "gray.200";
-  const subtle = "gray.600";
-  const helperBg = "gray.50";
 
   const disableSubmit =
     busy ||
@@ -132,16 +122,17 @@ export function ParentAuthCard({ onAuthed }: Props) {
 
   return (
     <Box
-      bg={panelBg}
+      bg="white"
       border="1px solid"
-      borderColor={border}
+      borderColor="gray.200"
       borderRadius="2xl"
-      p={{ base: 5, md: 6 }}
+      p={{ base: 5, md: 8 }}
       color="gray.800"
+      boxShadow="sm"
     >
-      <VStack align="stretch" spacing={5}>
-        <HStack justify="space-between" align="center">
-          <Heading size="sm" color="gray.800">
+      <VStack align="stretch" spacing={6}>
+        <HStack justify="space-between" align="center" flexWrap="wrap" gap={3}>
+          <Heading size="md">
             {mode === "signup" ? "Create your parent account" : "Sign in"}
           </Heading>
 
@@ -155,6 +146,7 @@ export function ParentAuthCard({ onAuthed }: Props) {
             >
               Sign up
             </Button>
+
             <Button
               size="sm"
               variant={mode === "signin" ? "solid" : "outline"}
@@ -170,155 +162,145 @@ export function ParentAuthCard({ onAuthed }: Props) {
         <Divider />
 
         <Box as="form" onSubmit={handleSubmit}>
-          <Stack spacing={4}>
+          <Stack spacing={5}>
             <FormControl isRequired>
-              <FormLabel color="gray.800">Email</FormLabel>
+              <FormLabel>Email</FormLabel>
               <Input
-                bg="white"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 isDisabled={busy}
                 placeholder="you@email.com"
                 type="email"
+                size="lg"
+                bg="white"
+                color="gray.800"
+                borderColor="gray.300"
+                _placeholder={{ color: "gray.400" }}
               />
             </FormControl>
 
-            <Box minH="22px">
-              {checkEmailQuery.isFetching && emailNormalized ? (
-                <HStack spacing={2} color={subtle} fontSize="sm">
-                  <Spinner size="xs" />
-                  <Text>Checking email…</Text>
-                </HStack>
-              ) : emailExists === true ? (
-                <Box bg={helperBg} borderRadius="lg" p={3} border="1px solid" borderColor="gray.200">
-                  <Text fontSize="sm" color="gray.700">
-                    Account found — you can{" "}
-                    <Button
-                      variant="link"
-                      size="sm"
-                      onClick={() => setMode("signin")}
-                      isDisabled={busy}
-                      colorScheme="teal"
-                      fontWeight="semibold"
-                    >
-                      sign in
-                    </Button>
-                    .
-                  </Text>
-                </Box>
-              ) : emailExists === false && emailNormalized ? (
-                <Box bg={helperBg} borderRadius="lg" p={3} border="1px solid" borderColor="gray.200">
-                  <Text fontSize="sm" color="gray.700">
-                    No account yet — you can{" "}
-                    <Button
-                      variant="link"
-                      size="sm"
-                      onClick={() => setMode("signup")}
-                      isDisabled={busy}
-                      colorScheme="teal"
-                      fontWeight="semibold"
-                    >
-                      create one
-                    </Button>
-                    .
-                  </Text>
-                </Box>
-              ) : null}
-            </Box>
+            {checkEmailQuery.isFetching && emailNormalized && (
+              <HStack spacing={2} color="gray.600" fontSize="sm">
+                <Spinner size="xs" />
+                <Text>Checking email…</Text>
+              </HStack>
+            )}
+
+            {emailExists === true && (
+              <Alert status="info" borderRadius="lg">
+                <AlertIcon />
+                <Text fontSize="sm">
+                  Account found. You can switch to sign in.
+                </Text>
+              </Alert>
+            )}
 
             {mode === "signup" && (
               <FormControl isRequired>
-                <FormLabel color="gray.800">Parent name</FormLabel>
+                <FormLabel>Parent name</FormLabel>
                 <Input
-                  bg="white"
                   value={parentName}
                   onChange={(e) => setParentName(e.target.value)}
                   autoComplete="name"
                   isDisabled={busy}
                   placeholder="First Last"
+                  size="lg"
+                  bg="white"
+                  color="gray.800"
+                  borderColor="gray.300"
+                  _placeholder={{ color: "gray.400" }}
                 />
               </FormControl>
             )}
 
             <FormControl isRequired>
-              <FormLabel color="gray.800">Password</FormLabel>
+              <FormLabel>Password</FormLabel>
               <Input
-                bg="white"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 type="password"
-                autoComplete={
-                  mode === "signup" ? "new-password" : "current-password"
-                }
+                autoComplete={mode === "signup" ? "new-password" : "current-password"}
                 isDisabled={busy}
-                placeholder="••••••••"
+                placeholder="Create a secure password"
+                size="lg"
+                bg="white"
+                color="gray.800"
+                borderColor="gray.300"
+                _placeholder={{ color: "gray.400" }}
               />
             </FormControl>
 
             {mode === "signup" && (
               <Box>
-                <Text fontWeight="semibold" mb={2} color="gray.800">
+                <Text fontWeight="semibold" mb={3}>
                   Children
                 </Text>
 
-                <Stack spacing={3}>
-                  {children.map((c, idx) => (
-                    <HStack key={idx} spacing={3} align="end">
-                      <FormControl>
-                        <FormLabel fontSize="sm" color="gray.800">
-                          Child name
-                        </FormLabel>
+                <Stack spacing={4}>
+                  {children.map((child, index) => (
+                    <SimpleGrid
+                      key={index}
+                      columns={{ base: 1, md: 12 }}
+                      spacing={3}
+                      alignItems="end"
+                    >
+                      <FormControl gridColumn={{ base: "auto", md: "span 7" }}>
+                        <FormLabel fontSize="sm">Child name</FormLabel>
                         <Input
-                          bg="white"
-                          value={c.name}
+                          value={child.name}
                           onChange={(e) =>
-                            updateChild(idx, { name: e.target.value })
+                            updateChild(index, { name: e.target.value })
                           }
                           isDisabled={busy}
                           placeholder="Child name"
+                          bg="white"
+                          color="gray.800"
+                          borderColor="gray.300"
+                          _placeholder={{ color: "gray.400" }}
                         />
                       </FormControl>
 
-                      <FormControl w="140px">
-                        <FormLabel fontSize="sm" color="gray.800">
-                          Age
-                        </FormLabel>
+                      <FormControl gridColumn={{ base: "auto", md: "span 3" }}>
+                        <FormLabel fontSize="sm">Age</FormLabel>
                         <NumberInput
-                          value={c.age}
+                          value={child.age}
                           min={0}
                           max={25}
-                          onChange={(_, n) =>
-                            updateChild(idx, {
-                              age: Number.isFinite(n) ? n : 0,
+                          onChange={(_, numberValue) =>
+                            updateChild(index, {
+                              age: Number.isFinite(numberValue) ? numberValue : 0,
                             })
                           }
                           isDisabled={busy}
                         >
-                          <NumberInputField bg="white" />
+                          <NumberInputField
+                            bg="white"
+                            color="gray.800"
+                            borderColor="gray.300"
+                          />
                         </NumberInput>
                       </FormControl>
 
                       <IconButton
+                        gridColumn={{ base: "auto", md: "span 2" }}
                         aria-label="Remove child"
                         icon={<CloseIcon />}
-                        onClick={() => removeChildRow(idx)}
+                        onClick={() => removeChildRow(index)}
                         isDisabled={busy || children.length === 1}
                         variant="outline"
-                        title={
-                          children.length === 1
-                            ? "Keep at least one row"
-                            : "Remove"
-                        }
                       />
-                    </HStack>
+                    </SimpleGrid>
                   ))}
 
                   <Button
                     onClick={addChildRow}
                     isDisabled={busy}
                     variant="outline"
-                    colorScheme="teal"
+                    variant="outline"
+borderColor="#5f6f52"
+color="#5f6f52"
+_hover={{ bg: "#f0f3ed" }}
                     alignSelf="flex-start"
                   >
                     + Add another child
@@ -329,7 +311,9 @@ export function ParentAuthCard({ onAuthed }: Props) {
 
             <Button
               type="submit"
-              colorScheme="teal"
+              bg="#5f6f52"
+color="white"
+_hover={{ bg: "#4f5f44" }}
               size="lg"
               isLoading={busy}
               isDisabled={disableSubmit}
@@ -343,16 +327,11 @@ export function ParentAuthCard({ onAuthed }: Props) {
                 {signUp.error?.message || signIn.error?.message}
               </Alert>
             )}
-
-            <Text fontSize="sm" color={subtle}>
-              Token is stored as <code>parent_access_token</code> in localStorage.
-            </Text>
           </Stack>
         </Box>
       </VStack>
     </Box>
   );
 }
-
 
 
