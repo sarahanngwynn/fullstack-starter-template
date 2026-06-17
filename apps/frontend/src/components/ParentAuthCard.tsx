@@ -28,6 +28,10 @@ type Props = {
   onAuthed?: (token: string) => void;
 };
 
+const BRAND_GREEN = "#5f6f52";
+const BRAND_GREEN_DARK = "#4f5f44";
+const BRAND_GREEN_LIGHT = "#f0f3ed";
+
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
@@ -74,7 +78,7 @@ export function ParentAuthCard({ onAuthed }: Props) {
 
   function updateChild(index: number, patch: Partial<ChildInput>) {
     setChildren((prev) =>
-      prev.map((c, i) => (i === index ? { ...c, ...patch } : c))
+      prev.map((child, i) => (i === index ? { ...child, ...patch } : child))
     );
   }
 
@@ -87,11 +91,11 @@ export function ParentAuthCard({ onAuthed }: Props) {
     try {
       if (mode === "signup") {
         const cleanedChildren = children
-          .map((c) => ({
-            name: c.name.trim(),
-            age: Number.isFinite(c.age) ? c.age : 0,
+          .map((child) => ({
+            name: child.name.trim(),
+            age: Number.isFinite(child.age) ? child.age : 0,
           }))
-          .filter((c) => c.name.length > 0);
+          .filter((child) => child.name.length > 0);
 
         const res = await signUp.mutateAsync({
           parentName: parentName.trim(),
@@ -137,25 +141,21 @@ export function ParentAuthCard({ onAuthed }: Props) {
           </Heading>
 
           <HStack spacing={2}>
-            <Button
-              size="sm"
-              variant={mode === "signup" ? "solid" : "outline"}
-              colorScheme="teal"
+            <AuthModeButton
+              isActive={mode === "signup"}
               onClick={() => setMode("signup")}
               isDisabled={busy}
             >
               Sign up
-            </Button>
+            </AuthModeButton>
 
-            <Button
-              size="sm"
-              variant={mode === "signin" ? "solid" : "outline"}
-              colorScheme="teal"
+            <AuthModeButton
+              isActive={mode === "signin"}
               onClick={() => setMode("signin")}
               isDisabled={busy}
             >
               Sign in
-            </Button>
+            </AuthModeButton>
           </HStack>
         </HStack>
 
@@ -220,7 +220,9 @@ export function ParentAuthCard({ onAuthed }: Props) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 type="password"
-                autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                autoComplete={
+                  mode === "signup" ? "new-password" : "current-password"
+                }
                 isDisabled={busy}
                 placeholder="Create a secure password"
                 size="lg"
@@ -269,7 +271,9 @@ export function ParentAuthCard({ onAuthed }: Props) {
                           max={25}
                           onChange={(_, numberValue) =>
                             updateChild(index, {
-                              age: Number.isFinite(numberValue) ? numberValue : 0,
+                              age: Number.isFinite(numberValue)
+                                ? numberValue
+                                : 0,
                             })
                           }
                           isDisabled={busy}
@@ -289,6 +293,8 @@ export function ParentAuthCard({ onAuthed }: Props) {
                         onClick={() => removeChildRow(index)}
                         isDisabled={busy || children.length === 1}
                         variant="outline"
+                        borderColor="gray.300"
+                        color="gray.700"
                       />
                     </SimpleGrid>
                   ))}
@@ -297,10 +303,9 @@ export function ParentAuthCard({ onAuthed }: Props) {
                     onClick={addChildRow}
                     isDisabled={busy}
                     variant="outline"
-                    variant="outline"
-borderColor="#5f6f52"
-color="#5f6f52"
-_hover={{ bg: "#f0f3ed" }}
+                    borderColor={BRAND_GREEN}
+                    color={BRAND_GREEN}
+                    _hover={{ bg: BRAND_GREEN_LIGHT }}
                     alignSelf="flex-start"
                   >
                     + Add another child
@@ -311,9 +316,9 @@ _hover={{ bg: "#f0f3ed" }}
 
             <Button
               type="submit"
-              bg="#5f6f52"
-color="white"
-_hover={{ bg: "#4f5f44" }}
+              bg={BRAND_GREEN}
+              color="white"
+              _hover={{ bg: BRAND_GREEN_DARK }}
               size="lg"
               isLoading={busy}
               isDisabled={disableSubmit}
@@ -334,4 +339,43 @@ _hover={{ bg: "#4f5f44" }}
   );
 }
 
+function AuthModeButton({
+  isActive,
+  isDisabled,
+  onClick,
+  children,
+}: {
+  isActive: boolean;
+  isDisabled: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  if (isActive) {
+    return (
+      <Button
+        size="sm"
+        bg={BRAND_GREEN}
+        color="white"
+        _hover={{ bg: BRAND_GREEN_DARK }}
+        onClick={onClick}
+        isDisabled={isDisabled}
+      >
+        {children}
+      </Button>
+    );
+  }
 
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      borderColor={BRAND_GREEN}
+      color={BRAND_GREEN}
+      _hover={{ bg: BRAND_GREEN_LIGHT }}
+      onClick={onClick}
+      isDisabled={isDisabled}
+    >
+      {children}
+    </Button>
+  );
+}

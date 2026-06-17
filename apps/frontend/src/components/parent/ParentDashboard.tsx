@@ -19,10 +19,18 @@ import { useNavigate } from "react-router-dom";
 import { trpc } from "../../utils/trpc";
 import { ParentPortalShell } from "./ParentPortalShell";
 
+const BRAND_GREEN = "#5f6f52";
+const BRAND_GREEN_DARK = "#4f5f44";
+const CREAM = "#f8f6f1";
+
 export function ParentDashboard() {
   const navigate = useNavigate();
 
   const meQuery = trpc.parents.me.useQuery();
+  const submissionsQuery = trpc.parents.mySubmissions.useQuery();
+
+  const applications = submissionsQuery.data?.applications ?? [];
+  const registrations = submissionsQuery.data?.registrations ?? [];
 
   return (
     <ParentPortalShell
@@ -61,7 +69,7 @@ export function ParentDashboard() {
                 </Text>
               </Box>
 
-              <Badge px={3} py={1} borderRadius="full" colorScheme="green">
+              <Badge bg="#e8eee4" color={BRAND_GREEN} px={3} py={1} borderRadius="full">
                 Parent Account
               </Badge>
             </HStack>
@@ -69,8 +77,8 @@ export function ParentDashboard() {
 
           <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
             <StatCard label="Children" value={meQuery.data.children.length} />
-            <StatCard label="Applications" value={0} />
-            <StatCard label="Registrations" value={0} />
+            <StatCard label="Applications" value={applications.length} />
+            <StatCard label="Registrations" value={registrations.length} />
           </SimpleGrid>
 
           <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
@@ -88,7 +96,7 @@ export function ParentDashboard() {
                   {meQuery.data.children.map((child) => (
                     <Box
                       key={child.id}
-                      bg="#f8f6f1"
+                      bg={CREAM}
                       border="1px solid"
                       borderColor="gray.200"
                       borderRadius="lg"
@@ -114,44 +122,81 @@ export function ParentDashboard() {
               <Divider mb={4} />
 
               <VStack align="stretch" spacing={3}>
-                <Button
-                  bg="#5f6f52"
-                  color="white"
-                  _hover={{ bg: "#4f5f44" }}
-                  onClick={() => navigate("/register")}
-                >
+                <PrimaryButton onClick={() => navigate("/register")}>
                   Start Registration
-                </Button>
+                </PrimaryButton>
 
-                <Button
-                  variant="outline"
-                  borderColor="gray.300"
-                  color="gray.800"
-                  onClick={() => navigate("/apply")}
-                >
+                <SecondaryButton onClick={() => navigate("/apply")}>
                   Start Application
-                </Button>
+                </SecondaryButton>
 
-                <Button
-                  variant="outline"
-                  borderColor="gray.300"
-                  color="gray.800"
-                  onClick={() => navigate("/parent/profile")}
-                >
+                <SecondaryButton onClick={() => navigate("/parent/profile")}>
                   View Parent Profile
-                </Button>
+                </SecondaryButton>
               </VStack>
             </Card>
           </SimpleGrid>
 
           <Card>
             <Heading size="md" color="gray.800" mb={4}>
-              Applications & Registrations
+              Applications
             </Heading>
 
             <Divider mb={4} />
 
-            <EmptyState text="Application and registration tracking will appear here once we connect submissions." />
+            {submissionsQuery.isLoading ? (
+              <HStack>
+                <Spinner />
+                <Text color="gray.700">Loading applications…</Text>
+              </HStack>
+            ) : applications.length === 0 ? (
+              <EmptyState
+                text="No applications found yet."
+                actionText="Start Application"
+                onClick={() => navigate("/apply")}
+              />
+            ) : (
+              <VStack align="stretch" spacing={3}>
+                {applications.map((submission: any) => (
+                  <SubmissionCard
+                    key={submission.id}
+                    submission={submission}
+                    label="Application"
+                  />
+                ))}
+              </VStack>
+            )}
+          </Card>
+
+          <Card>
+            <Heading size="md" color="gray.800" mb={4}>
+              Registrations
+            </Heading>
+
+            <Divider mb={4} />
+
+            {submissionsQuery.isLoading ? (
+              <HStack>
+                <Spinner />
+                <Text color="gray.700">Loading registrations…</Text>
+              </HStack>
+            ) : registrations.length === 0 ? (
+              <EmptyState
+                text="No registrations found yet."
+                actionText="Start Registration"
+                onClick={() => navigate("/register")}
+              />
+            ) : (
+              <VStack align="stretch" spacing={3}>
+                {registrations.map((submission: any) => (
+                  <SubmissionCard
+                    key={submission.id}
+                    submission={submission}
+                    label="Registration"
+                  />
+                ))}
+              </VStack>
+            )}
           </Card>
         </VStack>
       )}
@@ -168,6 +213,7 @@ function Card({ children }: { children: React.ReactNode }) {
       borderRadius="xl"
       p={6}
       boxShadow="sm"
+      color="gray.800"
     >
       {children}
     </Box>
@@ -187,10 +233,119 @@ function StatCard({ label, value }: { label: string; value: number }) {
   );
 }
 
-function EmptyState({ text }: { text: string }) {
+function EmptyState({
+  text,
+  actionText,
+  onClick,
+}: {
+  text: string;
+  actionText?: string;
+  onClick?: () => void;
+}) {
   return (
-    <Box bg="#f8f6f1" borderRadius="lg" p={5}>
-      <Text color="gray.600">{text}</Text>
+    <Box bg={CREAM} borderRadius="lg" p={5}>
+      <Text color="gray.700" mb={actionText ? 4 : 0}>
+        {text}
+      </Text>
+
+      {actionText && onClick && (
+        <PrimaryButton onClick={onClick}>{actionText}</PrimaryButton>
+      )}
     </Box>
+  );
+}
+
+function SubmissionCard({
+  submission,
+  label,
+}: {
+  submission: any;
+  label: string;
+}) {
+  const paid = Boolean(submission.hasPaid);
+
+  return (
+    <Box
+      bg={CREAM}
+      border="1px solid"
+      borderColor="gray.200"
+      borderRadius="lg"
+      p={4}
+      color="gray.800"
+    >
+      <HStack justify="space-between" align="flex-start" spacing={4}>
+        <Box>
+          <HStack spacing={2} mb={2}>
+            <Text fontWeight="bold" color="gray.800">
+              {label}
+            </Text>
+
+            <Badge
+              bg={paid ? "#e6f4ea" : "#fff4d6"}
+              color={paid ? "#276749" : "#8a6100"}
+              borderRadius="full"
+              px={2}
+            >
+              {paid ? "Paid" : "Pending"}
+            </Badge>
+          </HStack>
+
+          <Text color="gray.800">Child</Text>
+
+          <Text fontSize="sm" color="gray.600">
+            Submitted {new Date(submission.createdAt).toLocaleDateString()}
+          </Text>
+        </Box>
+      </HStack>
+
+      <Divider my={3} />
+
+      <Text fontSize="sm" color="gray.700">
+        Status: {submission.status ?? "Submitted"}
+      </Text>
+
+      <Text fontSize="sm" color="gray.700">
+        Procare Sync: {submission.procareSyncStatus ?? "Not sent"}
+      </Text>
+    </Box>
+  );
+}
+
+function PrimaryButton({
+  children,
+  onClick,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <Button
+      bg={BRAND_GREEN}
+      color="white"
+      _hover={{ bg: BRAND_GREEN_DARK }}
+      onClick={onClick}
+    >
+      {children}
+    </Button>
+  );
+}
+
+function SecondaryButton({
+  children,
+  onClick,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <Button
+      variant="outline"
+      borderColor={BRAND_GREEN}
+      color={BRAND_GREEN}
+      _hover={{ bg: "#f0f3ed" }}
+      onClick={onClick}
+    >
+      {children}
+    </Button>
   );
 }
