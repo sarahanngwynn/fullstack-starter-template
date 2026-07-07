@@ -28,7 +28,7 @@ interface LinkItemProps {
 const LinkItems: Array<LinkItemProps> = [
   { name: 'Home', icon: FiHome, path: '/' },
   { name: 'Apply', icon: FiEdit, path: '/apply' },
-  { name: 'Settings', icon: FiSettings, path: '/settings' },
+  { name: 'Notifications', icon: FiSettings, path: '/settings' },
 ];
 
 export default function SidebarWithHeader({
