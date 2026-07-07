@@ -38,14 +38,7 @@ export function App() {
             <Route path="/sign-up" element={<SignUpCard />} />
             <Route path="/login" element={<SignInCard />} />
 
-            <Route
-              path="/apply"
-              element={
-                <RequireParentAuth>
-                  <ApplyPage />
-                </RequireParentAuth>
-              }
-            />
+            <Route path="/apply" element={<ApplyPage />} />
 
             <Route
               path="/register"

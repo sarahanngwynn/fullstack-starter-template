@@ -22,7 +22,6 @@ export const useQueryTrpcClient = () => {
           
           const isParentRoute =
             pathname.startsWith("/parent") ||
-            pathname.startsWith("/apply") ||
             pathname.startsWith("/register");
           
 
