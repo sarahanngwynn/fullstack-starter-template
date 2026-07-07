@@ -258,7 +258,18 @@ export default function ApplyPage() {
     submitApplication.mutate(payload, {
       onSuccess: (result: { id: string }) => {
         console.log("Saved to backend with id:", result.id);
-        navigate("/parent?application=submitted", { replace: true });
+      
+        sessionStorage.setItem(
+          "pending_parent_account_prefill",
+          JSON.stringify({
+            email: data.email,
+            parentName: `${data.parentFirstName} ${data.parentLastName}`.trim(),
+            childName: data.childFullName,
+            childBirthDate: data.childBirthDate,
+          })
+        );
+      
+        navigate("/parent/auth?fromApplication=1", { replace: true });
       },
       onError: (error: any) => {
         console.error("Failed to save application:", error);
